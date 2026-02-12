@@ -1,123 +1,1121 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{ app_name }}</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-  <main class="shell">
-    <section class="hero">
-      <div>
-        <h1>{{ app_name }}</h1>
-        <p>WhisperX transcription studio with job history, output previews, and re-downloadable artifacts.</p>
-      </div>
-      <div class="hero-actions">
-        <button id="refresh-history" type="button">Refresh History</button>
-        <button id="cancel-active" type="button">Cancel Active Job</button>
-        <button id="clear-queue" type="button">Clear Queue</button>
-      </div>
-    </section>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TranscribePro - Audio Transcription Suite</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bg-primary: #0a0e14;
+                --bg-secondary: #111821;
+                --bg-card: #161f2d;
+                --bg-elevated: #1c2736;
+                --border: #2a3544;
+                --border-subtle: #1e2836;
+                --text-primary: #f0f4f8;
+                --text-secondary: #a4b0c0;
+                --text-muted: #5c6b7e;
+                --accent: #e5a835;
+                --accent-hover: #f0b944;
+                --accent-muted: rgba(229, 168, 53, 0.15);
+                --success: #34d399;
+                --warning: #fb923c;
+                --error: #f87171;
+                --info: #60a5fa;
+            }
 
-    <section class="workspace">
-      <div class="column">
-        <section class="panel">
-          <h2>New Job</h2>
-          <form id="job-form">
-            <label>Media file
-              <input type="file" id="file" name="file" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg,.mp4,.mov,.mkv,.avi,.webm,.m4v" required />
-            </label>
-            <audio id="audio-preview" controls hidden></audio>
+            * {
+                font-family: "DM Sans", sans-serif;
+            }
 
-            <div class="grid">
-              <label>Model
-                <select id="model_name" name="model_name"></select>
-              </label>
-              <label>Language
-                <input type="text" id="language" name="language" value="en" placeholder="en" />
-              </label>
-              <label>Batch size
-                <input type="number" id="batch_size" name="batch_size" value="16" min="1" />
-              </label>
-              <label>Device
-                <select id="device" name="device"></select>
-              </label>
-              <label>Compute type
-                <select id="compute_type" name="compute_type">
-                  <option value="float32">float32</option>
-                  <option value="float16">float16</option>
-                  <option value="int8">int8</option>
-                </select>
-              </label>
-              <label>Summary style
-                <select id="summary_style" name="summary_style">
-                  <option value="short">short</option>
-                  <option value="detailed">detailed</option>
-                  <option value="bullet">bullet</option>
-                  <option value="action_items">action_items</option>
-                </select>
-              </label>
+            h1,
+            h2,
+            h3,
+            h4,
+            .font-display {
+                font-family: "Space Grotesk", sans-serif;
+            }
+
+            body {
+                background: var(--bg-primary);
+                color: var(--text-primary);
+            }
+
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: var(--bg-secondary);
+            }
+            ::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 3px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--text-muted);
+            }
+
+            @keyframes fadeSlideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes pulse-glow {
+                0%,
+                100% {
+                    box-shadow: 0 0 0 0 rgba(229, 168, 53, 0.4);
+                }
+                50% {
+                    box-shadow: 0 0 0 12px rgba(229, 168, 53, 0);
+                }
+            }
+
+            @keyframes waveform-bar {
+                0%,
+                100% {
+                    transform: scaleY(0.3);
+                }
+                50% {
+                    transform: scaleY(1);
+                }
+            }
+
+            .animate-in {
+                animation: fadeSlideUp 0.5s ease-out forwards;
+            }
+
+            .stagger-1 {
+                animation-delay: 0.1s;
+                opacity: 0;
+            }
+            .stagger-2 {
+                animation-delay: 0.2s;
+                opacity: 0;
+            }
+            .stagger-3 {
+                animation-delay: 0.3s;
+                opacity: 0;
+            }
+            .stagger-4 {
+                animation-delay: 0.4s;
+                opacity: 0;
+            }
+
+            .recording-pulse {
+                animation: pulse-glow 2s infinite;
+            }
+
+            .waveform-bar {
+                animation: waveform-bar 0.8s ease-in-out infinite;
+            }
+
+            .glass {
+                background: rgba(22, 31, 45, 0.8);
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--border-subtle);
+            }
+
+            .bg-pattern {
+                background-image:
+                    radial-gradient(
+                        ellipse at 20% 0%,
+                        rgba(229, 168, 53, 0.08) 0%,
+                        transparent 50%
+                    ),
+                    radial-gradient(
+                        ellipse at 80% 100%,
+                        rgba(96, 165, 250, 0.05) 0%,
+                        transparent 50%
+                    ),
+                    linear-gradient(
+                        180deg,
+                        var(--bg-primary) 0%,
+                        var(--bg-secondary) 100%
+                    );
+            }
+
+            .focus-ring:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 2px;
+            }
+
+            .btn-hover {
+                transition: all 0.2s ease;
+            }
+            .btn-hover:hover {
+                transform: translateY(-1px);
+            }
+            .btn-hover:active {
+                transform: translateY(0);
+            }
+
+            .card-hover {
+                transition: all 0.25s ease;
+            }
+            .card-hover:hover {
+                background: var(--bg-elevated);
+                border-color: var(--border);
+            }
+
+            .tab-active {
+                position: relative;
+            }
+            .tab-active::after {
+                content: "";
+                position: absolute;
+                bottom: -1px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: var(--accent);
+                border-radius: 1px 1px 0 0;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                *,
+                *::before,
+                *::after {
+                    animation-duration: 0.01ms !important;
+                    animation-iteration-count: 1 !important;
+                    transition-duration: 0.01ms !important;
+                }
+            }
+        </style>
+    </head>
+    <body class="min-h-screen bg-pattern overflow-hidden">
+        <div class="h-screen flex flex-col">
+            <header
+                class="flex-shrink-0 h-16 border-b border-[var(--border-subtle)] px-6 flex items-center justify-between animate-in"
+            >
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[#d4922a] flex items-center justify-center"
+                    >
+                        <svg
+                            class="w-6 h-6 text-[var(--bg-primary)]"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                            />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1
+                            class="font-display font-bold text-lg tracking-tight"
+                        >
+                            TranscribePro
+                        </h1>
+                        <p class="text-xs text-[var(--text-muted)]">
+                            Audio Intelligence Suite
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-6 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="w-2 h-2 rounded-full bg-[var(--success)]"
+                            ></span>
+                            <span class="text-[var(--text-secondary)]"
+                                ><span id="completedCount">0</span>
+                                completed</span
+                            >
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="w-2 h-2 rounded-full bg-[var(--warning)]"
+                            ></span>
+                            <span class="text-[var(--text-secondary)]"
+                                ><span id="queueCount">0</span> in queue</span
+                            >
+                        </div>
+                    </div>
+
+                    <button
+                        id="openSettingsBtn"
+                        type="button"
+                        class="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
+                        aria-label="Open settings"
+                    >
+                        <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                            />
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                        </svg>
+                    </button>
+
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent-muted)] to-transparent border border-[var(--accent)] border-opacity-30 flex items-center justify-center"
+                    >
+                        <span
+                            class="font-display font-semibold text-[var(--accent)]"
+                            >JD</span
+                        >
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 flex overflow-hidden">
+                <aside
+                    class="w-80 flex-shrink-0 border-r border-[var(--border-subtle)] flex flex-col animate-in stagger-1"
+                >
+                    <div class="p-4 border-b border-[var(--border-subtle)]">
+                        <div
+                            class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-4"
+                        >
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-display font-semibold text-sm">
+                                    Recording
+                                </h3>
+                                <span
+                                    id="recordingTime"
+                                    class="text-xs text-[var(--text-muted)] font-mono"
+                                    >00:00:00</span
+                                >
+                            </div>
+
+                            <div
+                                id="waveformContainer"
+                                class="h-16 bg-[var(--bg-secondary)] rounded-xl mb-4 flex items-center justify-center gap-1 px-4 overflow-hidden"
+                            >
+                                <div
+                                    class="flex items-center gap-[3px] h-full py-3"
+                                >
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0s"
+                                    ></div>
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0.1s"
+                                    ></div>
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0.2s"
+                                    ></div>
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0.3s"
+                                    ></div>
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0.4s"
+                                    ></div>
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0.15s"
+                                    ></div>
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0.25s"
+                                    ></div>
+                                    <div
+                                        class="waveform-bar w-1 bg-[var(--accent)] rounded-full h-full"
+                                        style="animation-delay: 0.35s"
+                                    ></div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-center gap-3">
+                                <button
+                                    id="recordBtn"
+                                    type="button"
+                                    class="w-10 h-10 rounded-full bg-[var(--accent)] flex items-center justify-center text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                                    aria-label="Start recording"
+                                >
+                                    <svg
+                                        id="recordIcon"
+                                        class="w-6 h-6"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle cx="12" cy="12" r="6" />
+                                    </svg>
+                                </button>
+                                <button
+                                    id="uploadBtn"
+                                    type="button"
+                                    class="w-10 h-10 rounded-full bg-[var(--accent)] flex items-center justify-center text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                                    aria-label="Upload file"
+                                >
+                                    <svg
+                                        class="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                            <input
+                                type="file"
+                                id="fileInput"
+                                class="hidden"
+                                accept=".mp3,.wav,.m4a,.flac,.aac,.ogg,.mp4,.mov,.mkv,.avi,.webm,.m4v"
+                            />
+                            <audio
+                                id="audioPreview"
+                                class="w-full mt-4 hidden"
+                                controls
+                            ></audio>
+                        </div>
+                    </div>
+
+                    <div class="flex border-b border-[var(--border-subtle)]">
+                        <button
+                            id="tabHistory"
+                            type="button"
+                            class="flex-1 py-3 text-sm font-medium text-[var(--text-primary)] tab-active transition-colors"
+                        >
+                            History
+                        </button>
+                        <button
+                            id="tabQueue"
+                            type="button"
+                            class="flex-1 py-3 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                        >
+                            Queue
+                        </button>
+                    </div>
+
+                    <div
+                        class="flex-1 overflow-y-auto p-3 space-y-2"
+                        id="sidebarContent"
+                    ></div>
+                </aside>
+
+                <section
+                    class="flex-1 flex flex-col overflow-hidden animate-in stagger-2"
+                >
+                    <div class="p-4 border-b border-[var(--border-subtle)]">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <select
+                                    id="language"
+                                    class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
+                                >
+                                    <option value="en">English (US)</option>
+                                    <option value="en-GB">English (UK)</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                    <option value="zh">
+                                        Chinese (Simplified)
+                                    </option>
+                                    <option value="ja">Japanese</option>
+                                </select>
+                                <select
+                                    id="model_name"
+                                    class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
+                                ></select>
+                                <button
+                                    id="toggleTranscriptionSettings"
+                                    type="button"
+                                    class="flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                                        />
+                                    </svg>
+                                    More Options
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <button
+                                        id="exportBtn"
+                                        type="button"
+                                        class="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
+                                    >
+                                        Export
+                                    </button>
+                                    <div
+                                        id="exportMenu"
+                                        class="hidden absolute right-0 mt-2 w-52 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-3 z-20"
+                                    >
+                                        <label
+                                            class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                            for="exportFormat"
+                                            >Format</label
+                                        >
+                                        <select
+                                            id="exportFormat"
+                                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring mb-2"
+                                        ></select>
+                                        <button
+                                            id="confirmExportBtn"
+                                            type="button"
+                                            class="w-full px-3 py-2 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all"
+                                        >
+                                            Download
+                                        </button>
+                                    </div>
+                                </div>
+                                <button
+                                    id="startProcessBtn"
+                                    type="button"
+                                    class="px-4 py-2.5 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                                >
+                                    Process
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex overflow-hidden">
+                        <div
+                            class="flex-1 flex flex-col border-r border-[var(--border-subtle)]"
+                        >
+                            <div
+                                class="flex items-center justify-between p-3 border-b border-[var(--border-subtle)]"
+                            >
+                                <h3 class="font-display font-semibold text-sm">
+                                    Transcription Output
+                                </h3>
+                                <div class="flex items-center gap-1">
+                                    <button
+                                        id="copyTranscriptionBtn"
+                                        type="button"
+                                        class="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors focus-ring rounded px-2 py-1"
+                                    >
+                                        <svg
+                                            class="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                            />
+                                        </svg>
+                                        Copy
+                                    </button>
+                                    <button
+                                        id="previewTextBtn"
+                                        type="button"
+                                        class="px-2 py-1 text-xs rounded-md bg-[var(--bg-card)] text-[var(--text-primary)]"
+                                    >
+                                        Text
+                                    </button>
+                                    <button
+                                        id="previewTimestampsBtn"
+                                        type="button"
+                                        class="px-2 py-1 text-xs rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                                    >
+                                        Timestamps
+                                    </button>
+                                </div>
+                            </div>
+                            <div
+                                class="px-4 py-2 border-b border-[var(--border-subtle)]"
+                            >
+                                <div
+                                    class="w-full h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden"
+                                >
+                                    <div
+                                        id="progressBar"
+                                        class="h-full w-0 bg-gradient-to-r from-[var(--accent)] to-[var(--warning)]"
+                                    ></div>
+                                </div>
+                                <p
+                                    id="statusText"
+                                    class="text-xs text-[var(--text-muted)] mt-2"
+                                >
+                                    No active job.
+                                </p>
+                                <p
+                                    id="errorText"
+                                    class="text-xs text-[var(--error)] mt-1"
+                                ></p>
+                            </div>
+                            <div class="flex-1 p-4 overflow-y-auto">
+                                <div
+                                    id="transcriptionOutput"
+                                    class="text-[var(--text-secondary)] leading-relaxed text-sm whitespace-pre-wrap"
+                                >
+                                    <span
+                                        class="text-[var(--text-muted)] italic"
+                                        >Your transcription will appear here.
+                                        Start recording or upload an audio file
+                                        to begin.</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="w-80 flex-shrink-0 flex flex-col bg-[var(--bg-secondary)]"
+                        >
+                            <div
+                                class="flex items-center justify-between p-3 border-b border-[var(--border-subtle)]"
+                            >
+                                <h3 class="font-display font-semibold text-sm">
+                                    Log
+                                </h3>
+                            </div>
+                            <div class="flex-1 p-4 overflow-y-auto">
+                                <div
+                                    id="previewContent"
+                                    class="text-xs text-[var(--text-secondary)] leading-relaxed space-y-2"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <aside
+                    class="w-96 flex-shrink-0 flex flex-col border-l border-[var(--border-subtle)] animate-in stagger-3"
+                >
+                    <div class="p-4 border-b border-[var(--border-subtle)]">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-display font-semibold">
+                                AI Summary
+                            </h3>
+                            <button
+                                id="copySummaryBtn"
+                                type="button"
+                                class="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors focus-ring rounded px-2 py-1"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    />
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <select
+                                id="summaryType"
+                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
+                            >
+                                <option value="short">Brief Summary</option>
+                                <option value="detailed">
+                                    Detailed Summary
+                                </option>
+                                <option value="action_items">
+                                    Action Items
+                                </option>
+                                <option value="bullet">Meeting Notes</option>
+                            </select>
+
+                            <div class="flex gap-2">
+                                <label
+                                    class="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        id="keyPoints"
+                                        checked
+                                        class="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-card)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
+                                    />
+                                    Key Points
+                                </label>
+                                <label
+                                    class="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        id="sentiment"
+                                        class="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-card)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
+                                    />
+                                    Sentiment
+                                </label>
+                                <label
+                                    class="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        id="topics"
+                                        checked
+                                        class="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-card)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
+                                    />
+                                    Topics
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 p-4 overflow-y-auto">
+                        <div id="summaryOutput" class="space-y-4">
+                            <div
+                                class="text-[var(--text-muted)] italic text-sm"
+                            >
+                                AI summary will be generated after transcription
+                                is complete.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-t border-[var(--border-subtle)]">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                id="regenerateSummaryBtn"
+                                type="button"
+                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                    />
+                                </svg>
+                                Regenerate
+                            </button>
+                            <button
+                                id="generateSummaryBtn"
+                                type="button"
+                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                                    />
+                                </svg>
+                                Generate
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+            </main>
+        </div>
+        <div id="settingsModal" class="fixed inset-0 z-50 hidden">
+            <div
+                class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                id="settingsBackdrop"
+            ></div>
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] overflow-hidden"
+            >
+                <div
+                    class="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl"
+                >
+                    <div
+                        class="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]"
+                    >
+                        <h2 class="font-display font-bold text-xl">Settings</h2>
+                        <button
+                            id="closeSettingsBtnTop"
+                            type="button"
+                            class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all focus-ring"
+                            aria-label="Close settings"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-5 overflow-y-auto max-h-[60vh] space-y-6">
+                        <div>
+                            <h3 class="font-display font-semibold text-sm mb-3">
+                                Transcription
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Speaker Detection</label
+                                    >
+                                    <select
+                                        id="settingsSpeakerDetection"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    >
+                                        <option>Automatic</option>
+                                        <option>Manual</option>
+                                        <option>Disabled</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Punctuation</label
+                                    >
+                                    <select
+                                        id="settingsPunctuation"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    >
+                                        <option>Automatic</option>
+                                        <option>Manual Review</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Profanity Filter</label
+                                    >
+                                    <select
+                                        id="settingsProfanity"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    >
+                                        <option>Enabled</option>
+                                        <option>Disabled</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Output Format</label
+                                    >
+                                    <select
+                                        id="settingsOutputFormat"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    >
+                                        <option>Plain Text</option>
+                                        <option>SRT Subtitles</option>
+                                        <option>JSON</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-semibold text-sm mb-3">
+                                AI Summary
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Model</label
+                                    >
+                                    <select
+                                        id="settingsSummaryModel"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    >
+                                        <option>GPT-4 Turbo</option>
+                                        <option>GPT-4</option>
+                                        <option>Claude 3</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Temperature</label
+                                    >
+                                    <input
+                                        id="settingsTemperature"
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value="30"
+                                        class="w-full accent-[var(--accent)]"
+                                    />
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Max Tokens</label
+                                    >
+                                    <input
+                                        id="settingsMaxTokens"
+                                        type="number"
+                                        value="1024"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    />
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Custom Prompt</label
+                                    >
+                                    <input
+                                        id="settingsCustomPrompt"
+                                        type="text"
+                                        placeholder="Optional custom instructions..."
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring placeholder:text-[var(--text-muted)]"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-semibold text-sm mb-3">
+                                Export & Integration
+                            </h3>
+                            <div class="space-y-3">
+                                <label
+                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-pointer card-hover"
+                                    ><span class="text-sm">Notion</span
+                                    ><input
+                                        id="settingsNotion"
+                                        type="checkbox"
+                                        class="w-5 h-5 rounded border-[var(--border)] bg-[var(--bg-card)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
+                                /></label>
+                                <label
+                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-pointer card-hover"
+                                    ><span class="text-sm">Google Docs</span
+                                    ><input
+                                        id="settingsGoogleDocs"
+                                        type="checkbox"
+                                        checked
+                                        class="w-5 h-5 rounded border-[var(--border)] bg-[var(--bg-card)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
+                                /></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="flex items-center justify-end gap-3 p-5 border-t border-[var(--border-subtle)]"
+                    >
+                        <button
+                            id="closeSettingsBtnBottom"
+                            type="button"
+                            class="px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="saveSettingsBtn"
+                            type="button"
+                            class="px-4 py-2.5 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <p class="hint">`auto` chooses GPU when available, otherwise CPU. On many AMD Windows setups, CPU is the only stable option.</p>
-
-            <div class="toggles">
-              <label><input type="checkbox" id="diarization" name="diarization" checked /> Speaker diarization</label>
-              <label><input type="checkbox" id="summary_enabled" name="summary_enabled" /> Summary</label>
+        <div
+            id="transcriptionSettingsPanel"
+            class="fixed top-24 left-1/2 -translate-x-1/2 z-40 hidden"
+        >
+            <div
+                class="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-4 w-80"
+            >
+                <h4 class="font-display font-semibold text-sm mb-3">
+                    Advanced Options
+                </h4>
+                <div class="space-y-3">
+                    <label class="flex items-center justify-between"
+                        ><span class="text-sm text-[var(--text-secondary)]"
+                            >Word Timestamps</span
+                        ><input
+                            id="word_timestamps"
+                            type="checkbox"
+                            checked
+                            class="w-4 h-4"
+                    /></label>
+                    <label class="flex items-center justify-between"
+                        ><span class="text-sm text-[var(--text-secondary)]"
+                            >Speaker Labels</span
+                        ><input
+                            id="speaker_labels"
+                            type="checkbox"
+                            checked
+                            class="w-4 h-4"
+                    /></label>
+                    <label class="flex items-center justify-between"
+                        ><span class="text-sm text-[var(--text-secondary)]"
+                            >Confidence Scores</span
+                        ><input
+                            id="confidence_scores"
+                            type="checkbox"
+                            class="w-4 h-4"
+                    /></label>
+                    <label class="flex items-center justify-between"
+                        ><span class="text-sm text-[var(--text-secondary)]"
+                            >Auto Punctuation</span
+                        ><input
+                            id="auto_punctuation"
+                            type="checkbox"
+                            checked
+                            class="w-4 h-4"
+                    /></label>
+                    <label class="flex items-center justify-between"
+                        ><span class="text-sm text-[var(--text-secondary)]"
+                            >Diarization</span
+                        ><input
+                            id="diarization"
+                            type="checkbox"
+                            checked
+                            class="w-4 h-4"
+                    /></label>
+                    <div>
+                        <label
+                            class="block text-sm text-[var(--text-secondary)] mb-1.5"
+                            >Device</label
+                        ><select
+                            id="device"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                        ></select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-sm text-[var(--text-secondary)] mb-1.5"
+                            >Compute Type</label
+                        ><select
+                            id="compute_type"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                        >
+                            <option value="float32">float32</option>
+                            <option value="float16">float16</option>
+                            <option value="int8">int8</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-sm text-[var(--text-secondary)] mb-1.5"
+                            >Batch Size</label
+                        ><input
+                            id="batch_size"
+                            type="number"
+                            min="1"
+                            value="16"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-sm text-[var(--text-secondary)] mb-1.5"
+                            >Summary on Completion</label
+                        ><input
+                            id="summary_enabled"
+                            type="checkbox"
+                            class="w-4 h-4"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-sm text-[var(--text-secondary)] mb-1.5"
+                            >Summary Style</label
+                        ><select
+                            id="summary_style"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                        >
+                            <option value="short">short</option>
+                            <option value="detailed">detailed</option>
+                            <option value="bullet">bullet</option>
+                            <option value="action_items">action_items</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-sm text-[var(--text-secondary)] mb-1.5"
+                            >Output Formats</label
+                        >
+                        <div
+                            id="format-list"
+                            class="grid grid-cols-2 gap-2 text-sm"
+                        ></div>
+                    </div>
+                </div>
+                <button
+                    id="applyTranscriptionSettingsBtn"
+                    type="button"
+                    class="w-full mt-4 px-4 py-2 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring"
+                >
+                    Apply
+                </button>
             </div>
+        </div>
 
-            <fieldset>
-              <legend>Output formats</legend>
-              <div id="format-list" class="formats"></div>
-            </fieldset>
+        <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+            <div
+                class="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-4 py-3 shadow-xl flex items-center gap-3"
+            >
+                <svg
+                    class="w-5 h-5 text-[var(--success)]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                    />
+                </svg>
+                <span id="toastMessage" class="text-sm"
+                    >Copied to clipboard</span
+                >
+            </div>
+        </div>
 
-            <button type="submit">Start Processing</button>
-          </form>
-        </section>
-
-        <section class="panel" id="status-panel">
-          <h2>Job Status</h2>
-          <div class="progress-wrap"><div id="progress-bar"></div></div>
-          <p id="status-text">No active job selected.</p>
-          <p id="error-text" class="error"></p>
-          <ul id="events"></ul>
-        </section>
-
-        <section class="panel" id="outputs-panel">
-          <h2>Outputs</h2>
-          <div id="downloads"></div>
-          <div class="summary-tools">
-            <select id="summary-regenerate-style">
-              <option value="short">short</option>
-              <option value="detailed">detailed</option>
-              <option value="bullet">bullet</option>
-              <option value="action_items">action_items</option>
-            </select>
-            <button id="regenerate-summary" type="button">Generate Summary</button>
-            <span id="summary-loading" class="loading" hidden>Generating summary...</span>
-          </div>
-          <h3>Preview</h3>
-          <div class="tools-row">
-            <select id="preview-format"></select>
-            <button id="copy-preview" type="button">Copy Preview</button>
-          </div>
-          <pre id="preview-content"></pre>
-          <h3>Summary</h3>
-          <div class="tools-row">
-            <button id="copy-summary" type="button">Copy Summary</button>
-          </div>
-          <pre id="summary-box"></pre>
-        </section>
-      </div>
-
-      <aside class="panel history">
-        <h2>Previous Sessions</h2>
-        <div id="history-list"></div>
-      </aside>
-    </section>
-  </main>
-
-  <script src="/static/app.js"></script>
-</body>
+        <script src="/static/app.js"></script>
+    </body>
 </html>
