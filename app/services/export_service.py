@@ -23,8 +23,10 @@ class ExportService:
         output_formats: List[str],
     ) -> Dict[str, str]:
         files: Dict[str, str] = {}
-        text = result.get("text", "").strip()
         segments = result.get("segments", [])
+        text = result.get("text", "").strip()
+        if not text and segments:
+            text = " ".join((seg.get("text", "").strip() for seg in segments)).strip()
 
         if "txt" in output_formats:
             p = job_dir / f"{base_name}.txt"

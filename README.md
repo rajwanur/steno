@@ -13,6 +13,12 @@ Production-oriented FastAPI app for media upload, WhisperX transcription/alignme
 - Optional summary generation (`short`, `detailed`, `bullet`, `action_items`)
 - Async background job processing with progress polling
 - Web UI for configuring model/language/device/diarization/summary/output formats
+- Job history persisted to disk with re-download support
+- In-UI preview for generated transcript outputs
+- Audio preview before transcription starts
+- Cancel active job / clear queued jobs from UI
+- Session recall: selecting a previous job re-applies its configuration
+- Post-transcription summary generation/regeneration with style templates
 
 ## Project Structure
 
@@ -92,6 +98,11 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 6. Open `http://localhost:8000`
+
+Device selection note:
+- Use `auto` unless you have a known-good GPU stack.
+- `cuda` requires a CUDA/ROCm-capable PyTorch runtime.
+- On many AMD Windows environments, CPU is the stable path.
 
 ### Pip Fallback (if you do not use uv)
 

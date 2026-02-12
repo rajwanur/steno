@@ -5,10 +5,17 @@ from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
 from app.config import settings
-from app.schemas import JobCreateParams, JobCreateResponse, JobStatusResponse
+from app.schemas import (
+    JobCreateParams,
+    JobCreateResponse,
+    JobListItem,
+    JobStatusResponse,
+    QueueControlResponse,
+    SummaryRequest,
+)
 from app.services.job_service import JobService
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -25,6 +32,7 @@ def get_config() -> dict:
     return {
         "models": settings.whisperx_models,
         "formats": settings.supported_output_formats,
+        "devices": ["auto", "cpu", "cuda"],
         "defaults": {
             "model": settings.default_model,
             "language": settings.default_language,
@@ -87,12 +95,23 @@ def get_job(job_id: str, service: JobService = Depends(get_job_service)) -> JobS
 
     return JobStatusResponse(
         id=job.id,
+        filename=job.filename,
+        file_type=job.file_type,
         status=job.status,
         progress=job.progress,
         step=job.step,
         error=job.error,
+        events=job.events,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+        params=job.params,
         result=job.result,
     )
+
+
+@router.get("/jobs", response_model=list[JobListItem])
+def list_jobs(service: JobService = Depends(get_job_service)) -> list[JobListItem]:
+    return service.list_jobs()
 
 
 @router.get("/jobs/{job_id}/download/{fmt}")
@@ -111,3 +130,72 @@ def download(job_id: str, fmt: str, service: JobService = Depends(get_job_servic
 
     media_type = "application/json" if fmt == "json" else "text/plain"
     return FileResponse(path=file_path, filename=file_path.name, media_type=media_type)
+
+
+@router.get("/jobs/{job_id}/output/{fmt}")
+def preview_output(job_id: str, fmt: str, service: JobService = Depends(get_job_service)):
+    try:
+        job = service.get_job(job_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Job not found") from exc
+
+    if fmt not in job.result.generated_files:
+        raise HTTPException(status_code=404, detail="Requested format not generated")
+
+    file_path = Path(job.result.generated_files[fmt])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Generated file missing on disk")
+
+    if fmt == "json":
+        return JSONResponse(content=json.loads(file_path.read_text(encoding="utf-8")))
+    if fmt in {"txt", "srt", "vtt", "tsv"}:
+        return PlainTextResponse(content=file_path.read_text(encoding="utf-8"))
+
+    raise HTTPException(status_code=400, detail="Preview is not supported for this format")
+
+
+@router.post("/jobs/{job_id}/cancel", response_model=QueueControlResponse)
+def cancel_job(job_id: str, service: JobService = Depends(get_job_service)) -> QueueControlResponse:
+    try:
+        job = service.cancel_job(job_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Job not found") from exc
+    return QueueControlResponse(message=f"Job {job.id} marked for cancellation.")
+
+
+@router.post("/queue/clear", response_model=QueueControlResponse)
+def clear_queue(
+    include_active: bool = True,
+    service: JobService = Depends(get_job_service),
+) -> QueueControlResponse:
+    cleared = service.clear_queue(include_active=include_active)
+    return QueueControlResponse(message=f"Cancelled {cleared} queued job(s).")
+
+
+@router.post("/jobs/{job_id}/summary", response_model=JobStatusResponse)
+async def regenerate_summary(
+    job_id: str,
+    payload: SummaryRequest,
+    service: JobService = Depends(get_job_service),
+) -> JobStatusResponse:
+    try:
+        job = await service.regenerate_summary(job_id=job_id, style=payload.style)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Job not found") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return JobStatusResponse(
+        id=job.id,
+        filename=job.filename,
+        file_type=job.file_type,
+        status=job.status,
+        progress=job.progress,
+        step=job.step,
+        error=job.error,
+        events=job.events,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+        params=job.params,
+        result=job.result,
+    )

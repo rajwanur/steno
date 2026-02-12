@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
-JobStatus = Literal["queued", "processing", "completed", "failed"]
+JobStatus = Literal["queued", "processing", "completed", "failed", "cancelled"]
 SummaryStyle = Literal["short", "detailed", "bullet", "action_items"]
 
 
@@ -27,6 +27,7 @@ class JobResult(BaseModel):
     segments: List[Dict[str, Any]] = Field(default_factory=list)
     language: Optional[str] = None
     summary: Optional[str] = None
+    summaries: Dict[str, str] = Field(default_factory=dict)
     generated_files: Dict[str, str] = Field(default_factory=dict)
 
 
@@ -40,6 +41,8 @@ class JobState(BaseModel):
     progress: int = 0
     step: str = "queued"
     error: Optional[str] = None
+    events: List[str] = Field(default_factory=list)
+    cancel_requested: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     params: JobCreateParams
@@ -53,8 +56,34 @@ class JobCreateResponse(BaseModel):
 
 class JobStatusResponse(BaseModel):
     id: str
+    filename: str
+    file_type: Literal["audio", "video"]
     status: JobStatus
     progress: int
     step: str
     error: Optional[str] = None
+    events: List[str] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+    params: JobCreateParams
     result: JobResult
+
+
+class SummaryRequest(BaseModel):
+    style: SummaryStyle = "short"
+
+
+class QueueControlResponse(BaseModel):
+    message: str
+
+
+class JobListItem(BaseModel):
+    id: str
+    filename: str
+    file_type: Literal["audio", "video"]
+    status: JobStatus
+    progress: int
+    step: str
+    error: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime

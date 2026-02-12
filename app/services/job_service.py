@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import uuid
+from collections import deque
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 from fastapi import UploadFile
 
 from app.config import settings
-from app.schemas import JobCreateParams, JobState
+from app.schemas import JobCreateParams, JobListItem, JobState
 from app.services.export_service import ExportService
 from app.services.file_service import FileService
 from app.services.summarization_service import SummarizationService
@@ -26,8 +28,10 @@ class JobService:
         self.jobs: Dict[str, JobState] = {}
         self.queue: asyncio.Queue[str] = asyncio.Queue()
         self.worker_task: asyncio.Task | None = None
+        self.current_job_id: str | None = None
 
     async def start_worker(self) -> None:
+        self._load_jobs_from_disk()
         if self.worker_task is None:
             self.worker_task = asyncio.create_task(self._worker(), name="whisperx-worker")
 
@@ -59,7 +63,9 @@ class JobService:
             file_type=media_type,
             params=params,
         )
+        self._push_event(state, "Job queued.")
         self.jobs[job_id] = state
+        self._save_job(state)
         await self.queue.put(job_id)
         return job_id
 
@@ -68,6 +74,23 @@ class JobService:
         if not job:
             raise KeyError("Job not found")
         return job
+
+    def list_jobs(self) -> List[JobListItem]:
+        jobs = sorted(self.jobs.values(), key=lambda j: j.updated_at, reverse=True)
+        return [
+            JobListItem(
+                id=j.id,
+                filename=j.filename,
+                file_type=j.file_type,
+                status=j.status,
+                progress=j.progress,
+                step=j.step,
+                error=j.error,
+                created_at=j.created_at,
+                updated_at=j.updated_at,
+            )
+            for j in jobs
+        ]
 
     async def _worker(self) -> None:
         while True:
@@ -79,25 +102,46 @@ class JobService:
 
     async def _process_job(self, job_id: str) -> None:
         job = self.get_job(job_id)
+        if job.cancel_requested:
+            self._mark_cancelled(job, "Cancelled before processing started.")
+            return
+
+        self.current_job_id = job_id
         job.status = "processing"
         job.progress = 10
-        job.step = "transcribing"
+        job.step = "preparing"
         job.updated_at = datetime.utcnow()
+        self._push_event(job, "Started processing.")
+        self._save_job(job)
 
         try:
+            def _progress_cb(progress: int, step: str, event: str) -> None:
+                if job.cancel_requested:
+                    raise asyncio.CancelledError("Cancellation requested by user.")
+                job.progress = progress
+                job.step = step
+                job.updated_at = datetime.utcnow()
+                self._push_event(job, event)
+                self._save_job(job)
+
             result = await asyncio.to_thread(
                 self.transcription_service.transcribe,
                 Path(job.audio_path),
                 job.params,
+                _progress_cb,
             )
 
             job.progress = 70
             job.step = "exporting"
             job.updated_at = datetime.utcnow()
+            self._push_event(job, "Generating output files.")
+            self._save_job(job)
 
             job.result.transcript = result.get("text", "")
             job.result.segments = result.get("segments", [])
             job.result.language = result.get("language")
+            if job.cancel_requested:
+                raise asyncio.CancelledError("Cancellation requested by user.")
 
             outputs = self.export_service.write_outputs(
                 job_dir=Path(job.source_path).parent,
@@ -106,26 +150,148 @@ class JobService:
                 output_formats=job.params.output_formats,
             )
             job.result.generated_files = outputs
+            self._save_job(job)
 
             if job.params.summary_enabled:
                 job.progress = 85
                 job.step = "summarizing"
                 job.updated_at = datetime.utcnow()
+                self._push_event(job, "Generating summary.")
+                self._save_job(job)
                 summary = await asyncio.to_thread(
                     self.summarization_service.summarize,
-                    job.result.transcript or "",
+                    self._transcript_for_summary(job),
                     job.params.summary_style,
                 )
                 job.result.summary = summary
+                job.result.summaries[job.params.summary_style] = summary
 
             job.status = "completed"
             job.progress = 100
             job.step = "done"
             job.updated_at = datetime.utcnow()
+            self._push_event(job, "Completed successfully.")
+            self._save_job(job)
 
+        except asyncio.CancelledError:
+            self._mark_cancelled(job, "Cancelled by user.")
         except Exception as exc:
             job.status = "failed"
             job.progress = 100
             job.step = "failed"
             job.error = str(exc)
             job.updated_at = datetime.utcnow()
+            self._push_event(job, f"Failed: {job.error}")
+            self._save_job(job)
+        finally:
+            if self.current_job_id == job_id:
+                self.current_job_id = None
+
+    @staticmethod
+    def _push_event(job: JobState, message: str) -> None:
+        ts = datetime.utcnow().strftime("%H:%M:%S")
+        entry = f"[{ts}] {message}"
+        if not job.events or job.events[-1] != entry:
+            job.events.append(entry)
+        if len(job.events) > 120:
+            job.events = job.events[-120:]
+
+    def _job_json_path(self, job_id: str) -> Path:
+        return settings.jobs_dir / job_id / "job.json"
+
+    def _save_job(self, job: JobState) -> None:
+        p = self._job_json_path(job.id)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(job.model_dump(mode="json"), ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _load_jobs_from_disk(self) -> None:
+        self.jobs.clear()
+        settings.jobs_dir.mkdir(parents=True, exist_ok=True)
+        for path in settings.jobs_dir.glob("*/job.json"):
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                job = JobState.model_validate(raw)
+                if job.status in ("queued", "processing"):
+                    job.status = "failed"
+                    job.step = "interrupted"
+                    job.error = "Server restarted before job completion."
+                    job.updated_at = datetime.utcnow()
+                    self._push_event(job, "Marked interrupted after restart.")
+                    self._save_job(job)
+                self.jobs[job.id] = job
+            except Exception:
+                continue
+
+    def cancel_job(self, job_id: str) -> JobState:
+        job = self.get_job(job_id)
+        if job.status in ("completed", "failed", "cancelled"):
+            return job
+
+        job.cancel_requested = True
+        self._push_event(job, "Cancellation requested.")
+
+        if job.status == "queued":
+            self._remove_queued_job(job_id)
+            self._mark_cancelled(job, "Removed from queue.")
+        else:
+            job.step = "cancelling"
+            job.updated_at = datetime.utcnow()
+            self._save_job(job)
+        return job
+
+    def clear_queue(self, include_active: bool = True) -> int:
+        cleared = 0
+        queued_ids = list(self.queue._queue)  # noqa: SLF001
+        for job_id in queued_ids:
+            try:
+                self.cancel_job(job_id)
+                cleared += 1
+            except KeyError:
+                continue
+        if include_active and self.current_job_id:
+            self.cancel_job(self.current_job_id)
+        return cleared
+
+    async def regenerate_summary(self, job_id: str, style: str) -> JobState:
+        job = self.get_job(job_id)
+        if job.status not in ("completed", "failed"):
+            raise RuntimeError("Summary can be generated after transcription finishes.")
+
+        transcript = self._transcript_for_summary(job)
+        if not transcript.strip():
+            raise RuntimeError("Transcript is empty; cannot generate summary.")
+
+        job.step = "summarizing"
+        job.updated_at = datetime.utcnow()
+        self._push_event(job, f"Generating '{style}' summary.")
+        self._save_job(job)
+
+        summary = await asyncio.to_thread(self.summarization_service.summarize, transcript, style)
+        job.result.summary = summary
+        job.result.summaries[style] = summary
+        job.step = "done" if job.status == "completed" else job.step
+        job.updated_at = datetime.utcnow()
+        self._push_event(job, f"Summary '{style}' generated.")
+        self._save_job(job)
+        return job
+
+    def _transcript_for_summary(self, job: JobState) -> str:
+        text = (job.result.transcript or "").strip()
+        if text:
+            return text
+        if job.result.segments:
+            return " ".join((seg.get("text", "").strip() for seg in job.result.segments)).strip()
+        return ""
+
+    def _remove_queued_job(self, job_id: str) -> None:
+        q = self.queue._queue  # noqa: SLF001
+        self.queue._queue = deque((x for x in q if x != job_id))  # noqa: SLF001
+
+    def _mark_cancelled(self, job: JobState, message: str) -> None:
+        job.status = "cancelled"
+        job.progress = 100
+        job.step = "cancelled"
+        job.error = None
+        job.updated_at = datetime.utcnow()
+        self._push_event(job, message)
+        self._save_job(job)

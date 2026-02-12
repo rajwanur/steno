@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 import whisperx
 
@@ -77,23 +77,54 @@ class TranscriptionService:
                 "Please install a whisperx build with diarization support."
             ) from exc
 
-    def transcribe(self, audio_path: Path, params: JobCreateParams) -> Dict[str, Any]:
+    @staticmethod
+    def _resolve_device(requested_device: str) -> str:
+        try:
+            import torch
+        except Exception:
+            return "cpu" if requested_device == "auto" else requested_device
+
+        if requested_device == "auto":
+            return "cuda" if torch.cuda.is_available() else "cpu"
+
+        if requested_device == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError(
+                "CUDA was selected, but no CUDA/ROCm runtime is available for this PyTorch install. "
+                "For AMD GPUs, use a ROCm-compatible PyTorch build (typically on Linux). "
+                "Otherwise select device=cpu."
+            )
+        return requested_device
+
+    def transcribe(
+        self,
+        audio_path: Path,
+        params: JobCreateParams,
+        progress_cb: Callable[[int, str, str], None] | None = None,
+    ) -> Dict[str, Any]:
         self._prepare_torch_checkpoint_loading()
         self._patch_torch_load()
 
-        device = params.device or settings.default_device
+        requested_device = params.device or settings.default_device
+        device = self._resolve_device(requested_device)
         model_name = params.model_name or settings.default_model
         language = params.language or None
 
+        if progress_cb:
+            progress_cb(15, "loading model", f"Loading WhisperX model '{model_name}' on {device}.")
         model = whisperx.load_model(
             model_name,
             device,
             compute_type=params.compute_type,
             language=language,
         )
+
+        if progress_cb:
+            progress_cb(30, "transcribing", "Running speech-to-text transcription.")
         audio = whisperx.load_audio(str(audio_path))
         result = model.transcribe(audio, batch_size=params.batch_size)
 
+        if progress_cb:
+            progress_cb(55, "aligning", "Aligning timestamps for higher accuracy.")
         align_model, metadata = whisperx.load_align_model(
             language_code=result["language"],
             device=device,
@@ -110,6 +141,8 @@ class TranscriptionService:
         if params.diarization:
             if not settings.hf_token:
                 raise RuntimeError("Diarization requested but HF_TOKEN is not configured.")
+            if progress_cb:
+                progress_cb(75, "diarizing", "Running speaker diarization.")
             diarization_pipeline, assign_word_speakers = self._get_diarization_components()
             diarize_model = diarization_pipeline(
                 use_auth_token=settings.hf_token,
@@ -117,5 +150,8 @@ class TranscriptionService:
             )
             diarize_segments = diarize_model(str(audio_path))
             result = assign_word_speakers(diarize_segments, result)
+
+        if progress_cb:
+            progress_cb(88, "finalizing", "Finalizing transcript output.")
 
         return result

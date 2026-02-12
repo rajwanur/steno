@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     default_model: str = "small"
     default_language: str = "en"
     default_batch_size: int = 16
-    default_device: str = "cpu"
+    default_device: str = "auto"
     compute_type: str = "float32"
 
     whisperx_models: List[str] = Field(

@@ -7,74 +7,114 @@
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <main class="layout">
-    <section class="card hero">
-      <h1>{{ app_name }}</h1>
-      <p>Upload audio/video, run WhisperX transcription + diarization, and download multi-format outputs.</p>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <h1>{{ app_name }}</h1>
+        <p>WhisperX transcription studio with job history, output previews, and re-downloadable artifacts.</p>
+      </div>
+      <div class="hero-actions">
+        <button id="refresh-history" type="button">Refresh History</button>
+        <button id="cancel-active" type="button">Cancel Active Job</button>
+        <button id="clear-queue" type="button">Clear Queue</button>
+      </div>
     </section>
 
-    <section class="card">
-      <form id="job-form">
-        <label>Media file
-          <input type="file" id="file" name="file" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg,.mp4,.mov,.mkv,.avi,.webm,.m4v" required />
-        </label>
+    <section class="workspace">
+      <div class="column">
+        <section class="panel">
+          <h2>New Job</h2>
+          <form id="job-form">
+            <label>Media file
+              <input type="file" id="file" name="file" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg,.mp4,.mov,.mkv,.avi,.webm,.m4v" required />
+            </label>
+            <audio id="audio-preview" controls hidden></audio>
 
-        <div class="grid">
-          <label>Model
-            <select id="model_name" name="model_name"></select>
-          </label>
-          <label>Language
-            <input type="text" id="language" name="language" value="en" placeholder="en" />
-          </label>
-          <label>Batch size
-            <input type="number" id="batch_size" name="batch_size" value="16" min="1" />
-          </label>
-          <label>Device
-            <select id="device" name="device">
-              <option value="cpu">cpu</option>
-              <option value="cuda">cuda</option>
-            </select>
-          </label>
-          <label>Compute type
-            <select id="compute_type" name="compute_type">
-              <option value="float32">float32</option>
-              <option value="float16">float16</option>
-              <option value="int8">int8</option>
-            </select>
-          </label>
-          <label>Summary style
-            <select id="summary_style" name="summary_style">
+            <div class="grid">
+              <label>Model
+                <select id="model_name" name="model_name"></select>
+              </label>
+              <label>Language
+                <input type="text" id="language" name="language" value="en" placeholder="en" />
+              </label>
+              <label>Batch size
+                <input type="number" id="batch_size" name="batch_size" value="16" min="1" />
+              </label>
+              <label>Device
+                <select id="device" name="device"></select>
+              </label>
+              <label>Compute type
+                <select id="compute_type" name="compute_type">
+                  <option value="float32">float32</option>
+                  <option value="float16">float16</option>
+                  <option value="int8">int8</option>
+                </select>
+              </label>
+              <label>Summary style
+                <select id="summary_style" name="summary_style">
+                  <option value="short">short</option>
+                  <option value="detailed">detailed</option>
+                  <option value="bullet">bullet</option>
+                  <option value="action_items">action_items</option>
+                </select>
+              </label>
+            </div>
+
+            <p class="hint">`auto` chooses GPU when available, otherwise CPU. On many AMD Windows setups, CPU is the only stable option.</p>
+
+            <div class="toggles">
+              <label><input type="checkbox" id="diarization" name="diarization" checked /> Speaker diarization</label>
+              <label><input type="checkbox" id="summary_enabled" name="summary_enabled" /> Summary</label>
+            </div>
+
+            <fieldset>
+              <legend>Output formats</legend>
+              <div id="format-list" class="formats"></div>
+            </fieldset>
+
+            <button type="submit">Start Processing</button>
+          </form>
+        </section>
+
+        <section class="panel" id="status-panel">
+          <h2>Job Status</h2>
+          <div class="progress-wrap"><div id="progress-bar"></div></div>
+          <p id="status-text">No active job selected.</p>
+          <p id="error-text" class="error"></p>
+          <ul id="events"></ul>
+        </section>
+
+        <section class="panel" id="outputs-panel">
+          <h2>Outputs</h2>
+          <div id="downloads"></div>
+          <div class="summary-tools">
+            <select id="summary-regenerate-style">
               <option value="short">short</option>
               <option value="detailed">detailed</option>
               <option value="bullet">bullet</option>
               <option value="action_items">action_items</option>
             </select>
-          </label>
-        </div>
-
-        <div class="toggles">
-          <label><input type="checkbox" id="diarization" name="diarization" checked /> Speaker diarization</label>
-          <label><input type="checkbox" id="summary_enabled" name="summary_enabled" /> Summary</label>
-        </div>
-
-        <fieldset>
-          <legend>Output formats</legend>
-          <div id="format-list" class="formats"></div>
-        </fieldset>
-
-        <button type="submit">Start Processing</button>
-      </form>
-    </section>
-
-    <section class="card" id="status-card" hidden>
-      <h2>Progress</h2>
-      <div class="progress-wrap">
-        <div id="progress-bar"></div>
+            <button id="regenerate-summary" type="button">Generate Summary</button>
+            <span id="summary-loading" class="loading" hidden>Generating summary...</span>
+          </div>
+          <h3>Preview</h3>
+          <div class="tools-row">
+            <select id="preview-format"></select>
+            <button id="copy-preview" type="button">Copy Preview</button>
+          </div>
+          <pre id="preview-content"></pre>
+          <h3>Summary</h3>
+          <div class="tools-row">
+            <button id="copy-summary" type="button">Copy Summary</button>
+          </div>
+          <pre id="summary-box"></pre>
+        </section>
       </div>
-      <p id="status-text">Queued...</p>
-      <p id="error-text" class="error"></p>
-      <div id="downloads"></div>
-      <pre id="summary-box"></pre>
+
+      <aside class="panel history">
+        <h2>Previous Sessions</h2>
+        <div id="history-list"></div>
+      </aside>
     </section>
   </main>
 
