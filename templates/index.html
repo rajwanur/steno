@@ -13,6 +13,65 @@
         />
         <style>
             :root {
+                --bg-primary: #f4f7fb;
+                --bg-secondary: #edf2f8;
+                --bg-card: #ffffff;
+                --bg-elevated: #f8fafc;
+                --border: #c7d2e3;
+                --border-subtle: #dbe3ef;
+                --text-primary: #132033;
+                --text-secondary: #32455f;
+                --text-muted: #6a7f99;
+                --accent: #d39b2f;
+                --accent-hover: #c78f24;
+                --accent-muted: rgba(211, 155, 47, 0.16);
+                --success: #059669;
+                --warning: #d97706;
+                --error: #dc2626;
+                --info: #2563eb;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg-primary: #0a0e14;
+                    --bg-secondary: #111821;
+                    --bg-card: #161f2d;
+                    --bg-elevated: #1c2736;
+                    --border: #2a3544;
+                    --border-subtle: #1e2836;
+                    --text-primary: #f0f4f8;
+                    --text-secondary: #a4b0c0;
+                    --text-muted: #5c6b7e;
+                    --accent: #e5a835;
+                    --accent-hover: #f0b944;
+                    --accent-muted: rgba(229, 168, 53, 0.15);
+                    --success: #34d399;
+                    --warning: #fb923c;
+                    --error: #f87171;
+                    --info: #60a5fa;
+                }
+            }
+
+            :root[data-theme="light"] {
+                --bg-primary: #f4f7fb;
+                --bg-secondary: #edf2f8;
+                --bg-card: #ffffff;
+                --bg-elevated: #f8fafc;
+                --border: #c7d2e3;
+                --border-subtle: #dbe3ef;
+                --text-primary: #132033;
+                --text-secondary: #32455f;
+                --text-muted: #6a7f99;
+                --accent: #d39b2f;
+                --accent-hover: #c78f24;
+                --accent-muted: rgba(211, 155, 47, 0.16);
+                --success: #059669;
+                --warning: #d97706;
+                --error: #dc2626;
+                --info: #2563eb;
+            }
+
+            :root[data-theme="dark"] {
                 --bg-primary: #0a0e14;
                 --bg-secondary: #111821;
                 --bg-card: #161f2d;
@@ -185,6 +244,16 @@
                 border-radius: 1px 1px 0 0;
             }
 
+            #summaryOutput {
+                position: relative;
+                z-index: 1;
+            }
+
+            #summaryActions {
+                position: relative;
+                z-index: 5;
+            }
+
             @media (prefers-reduced-motion: reduce) {
                 *,
                 *::before,
@@ -199,7 +268,7 @@
     <body class="min-h-screen bg-pattern overflow-hidden">
         <div class="h-screen flex flex-col">
             <header
-                class="flex-shrink-0 h-16 border-b border-[var(--border-subtle)] px-6 flex items-center justify-between animate-in"
+                class="relative z-40 flex-shrink-0 h-16 border-b border-[var(--border-subtle)] px-6 flex items-center justify-between animate-in"
             >
                 <div class="flex items-center gap-3">
                     <div
@@ -279,13 +348,54 @@
                         </svg>
                     </button>
 
-                    <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent-muted)] to-transparent border border-[var(--accent)] border-opacity-30 flex items-center justify-center"
-                    >
-                        <span
-                            class="font-display font-semibold text-[var(--accent)]"
-                            >JD</span
+                    <div class="relative">
+                        <button
+                            id="themeMenuBtn"
+                            type="button"
+                            class="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
+                            aria-label="Theme options"
                         >
+                            <svg
+                                id="themeMenuIcon"
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05 5.636 5.636m12.728 0-1.414 1.414M7.05 16.95l-1.414 1.414M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                            </svg>
+                        </button>
+                        <div
+                            id="themeMenu"
+                            class="hidden absolute right-0 mt-2 w-40 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-2 z-[120] shadow-xl"
+                        >
+                            <button
+                                id="themeLightBtn"
+                                type="button"
+                                class="w-full text-left text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
+                            >
+                                Light
+                            </button>
+                            <button
+                                id="themeDarkBtn"
+                                type="button"
+                                class="w-full text-left text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
+                            >
+                                Dark
+                            </button>
+                            <button
+                                id="themeSystemBtn"
+                                type="button"
+                                class="w-full text-left text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
+                            >
+                                System
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -616,7 +726,7 @@
                 </section>
 
                 <aside
-                    class="w-96 flex-shrink-0 flex flex-col border-l border-[var(--border-subtle)] animate-in stagger-3"
+                    class="w-96 flex-shrink-0 flex flex-col border-l border-[var(--border-subtle)] animate-in stagger-3 relative z-10"
                 >
                     <div class="p-4 border-b border-[var(--border-subtle)]">
                         <div class="flex items-center justify-between mb-3">
@@ -708,7 +818,7 @@
                         </div>
                     </div>
 
-                    <div class="p-4 border-t border-[var(--border-subtle)]">
+        <div id="summaryActions" class="p-4 border-t border-[var(--border-subtle)]">
                         <div class="grid grid-cols-2 gap-2">
                             <button
                                 id="regenerateSummaryBtn"

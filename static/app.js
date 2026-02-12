@@ -1,4 +1,6 @@
 const el = (id) => document.getElementById(id);
+const THEME_STORAGE_KEY = "ui-theme-preference";
+const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
 const state = {
   currentTab: "history",
@@ -62,7 +64,75 @@ const refs = {
   summaryOutput: el("summaryOutput"),
   toast: el("toast"),
   toastMessage: el("toastMessage"),
+  themeMenuBtn: el("themeMenuBtn"),
+  themeMenuIcon: el("themeMenuIcon"),
+  themeMenu: el("themeMenu"),
+  themeLightBtn: el("themeLightBtn"),
+  themeDarkBtn: el("themeDarkBtn"),
+  themeSystemBtn: el("themeSystemBtn"),
 };
+
+function getThemeIconMarkup(preference) {
+  if (preference === "light") {
+    return `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364-1.414-1.414M7.05 7.05 5.636 5.636m12.728 0-1.414 1.414M7.05 16.95l-1.414 1.414M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+    `;
+  }
+  if (preference === "dark") {
+    return `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M21 12.79A9 9 0 1111.21 3c.1 0 .2.01.3.02A7 7 0 0018.98 12c0 .27-.02.53-.07.79A9.06 9.06 0 0021 12.79z"/>
+    `;
+  }
+  return `
+    <rect x="3" y="4" width="18" height="12" rx="2" ry="2" stroke-width="2"></rect>
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 20h8M12 16v4"></path>
+  `;
+}
+
+function normalizeThemePreference(value) {
+  return value === "light" || value === "dark" || value === "system"
+    ? value
+    : "system";
+}
+
+function getStoredThemePreference() {
+  return normalizeThemePreference(localStorage.getItem(THEME_STORAGE_KEY));
+}
+
+function resolveTheme(preference) {
+  if (preference === "system") {
+    return systemThemeQuery.matches ? "dark" : "light";
+  }
+  return preference;
+}
+
+function setThemeMenuActive(preference) {
+  const map = {
+    light: refs.themeLightBtn,
+    dark: refs.themeDarkBtn,
+    system: refs.themeSystemBtn,
+  };
+  Object.entries(map).forEach(([key, node]) => {
+    if (!node) return;
+    const active = key === preference;
+    node.classList.toggle("bg-[var(--bg-elevated)]", active);
+    node.classList.toggle("text-[var(--text-primary)]", active);
+    node.classList.toggle("text-[var(--text-secondary)]", !active);
+  });
+}
+
+function applyThemePreference(preference, persist = true) {
+  const normalized = normalizeThemePreference(preference);
+  const resolved = resolveTheme(normalized);
+  document.documentElement.setAttribute("data-theme", resolved);
+  refs.themeMenuIcon.innerHTML = getThemeIconMarkup(normalized);
+  setThemeMenuActive(normalized);
+  if (persist) {
+    localStorage.setItem(THEME_STORAGE_KEY, normalized);
+  }
+}
 
 function showToast(message) {
   refs.toastMessage.textContent = message;
@@ -75,10 +145,14 @@ function setError(message = "") {
 }
 
 function statusClass(status) {
-  if (status === "completed") return "bg-green-500/20 text-green-400";
-  if (status === "processing") return "bg-yellow-500/20 text-yellow-400";
-  if (status === "queued") return "bg-blue-500/20 text-blue-400";
-  return "bg-red-500/20 text-red-400";
+  return "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]";
+}
+
+function statusDotColor(status) {
+  if (status === "completed") return "var(--success)";
+  if (status === "processing") return "var(--warning)";
+  if (status === "queued") return "var(--info)";
+  return "var(--error)";
 }
 
 function formatDate(iso) {
@@ -195,7 +269,7 @@ function renderSegmentedTranscript(job, fallbackText) {
       const text = typeof seg?.text === "string" ? seg.text.trim() : "";
       return `<div class="m-2"><span class="text-[10px] font-mono text-[var(--accent)]">${start}-${end}</span>${
         speaker
-          ? `<span class="text-[10px] ml-1 px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">${escapeHtml(speaker)}</span>`
+          ? `<span class="text-[10px] ml-1 px-1.5 py-0.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)]">${escapeHtml(speaker)}</span>`
           : ""
       }<span class="ml-1">${escapeHtml(text || "(no text)")}</span></div>`;
     })
@@ -321,7 +395,10 @@ function renderSidebar() {
     row.innerHTML = `
       <div class="flex items-start justify-between mb-2">
         <h4 class="font-medium text-sm text-[var(--text-primary)] line-clamp-1">${escapeHtml(job.filename)}</h4>
-        <span class="flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium ${statusClass(job.status)}">${job.status}</span>
+        <span class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${statusClass(job.status)}">
+          <span class="inline-block w-1.5 h-1.5 rounded-full" style="background:${statusDotColor(job.status)}"></span>
+          <span>${job.status}</span>
+        </span>
       </div>
       <div class="flex items-center gap-3 text-xs text-[var(--text-muted)]">
         <span>${formatDate(job.updated_at)}</span>
@@ -528,6 +605,25 @@ async function copyFromNode(node, message) {
 }
 
 function attachEvents() {
+  refs.themeMenuBtn.addEventListener("click", () =>
+    refs.themeMenu.classList.toggle("hidden"),
+  );
+  refs.themeLightBtn.addEventListener("click", () => {
+    applyThemePreference("light");
+    refs.themeMenu.classList.add("hidden");
+    showToast("Light mode enabled");
+  });
+  refs.themeDarkBtn.addEventListener("click", () => {
+    applyThemePreference("dark");
+    refs.themeMenu.classList.add("hidden");
+    showToast("Dark mode enabled");
+  });
+  refs.themeSystemBtn.addEventListener("click", () => {
+    applyThemePreference("system");
+    refs.themeMenu.classList.add("hidden");
+    showToast("System theme enabled");
+  });
+
   refs.openSettingsBtn.addEventListener("click", () => toggleSettings(true));
   refs.settingsBackdrop.addEventListener("click", () => toggleSettings(false));
   refs.closeSettingsBtnTop.addEventListener("click", () =>
@@ -639,7 +735,16 @@ function attachEvents() {
     generateSummary().catch((e) => setError(e.message)),
   );
 
+  refs.generateSummaryBtn.style.pointerEvents = "auto";
+  refs.regenerateSummaryBtn.style.pointerEvents = "auto";
+
   document.addEventListener("click", (e) => {
+    if (
+      !refs.themeMenu.contains(e.target) &&
+      !refs.themeMenuBtn.contains(e.target)
+    ) {
+      refs.themeMenu.classList.add("hidden");
+    }
     if (
       !refs.exportMenu.contains(e.target) &&
       !refs.exportBtn.contains(e.target)
@@ -658,11 +763,18 @@ function attachEvents() {
       toggleSettings(false);
       toggleAdvancedPanel(false);
       refs.exportMenu.classList.add("hidden");
+      refs.themeMenu.classList.add("hidden");
     }
   });
 }
 
 async function init() {
+  applyThemePreference(getStoredThemePreference(), false);
+  systemThemeQuery.addEventListener("change", () => {
+    if (getStoredThemePreference() === "system") {
+      applyThemePreference("system", false);
+    }
+  });
   attachEvents();
   await loadConfig();
   await refreshJobs();
