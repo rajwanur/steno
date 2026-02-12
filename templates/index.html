@@ -1069,6 +1069,65 @@
             </div>
         </div>
 
+        <div id="deleteModal" class="fixed inset-0 z-[70] hidden">
+            <div
+                id="deleteBackdrop"
+                class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            ></div>
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md"
+            >
+                <div
+                    class="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-5"
+                >
+                    <h3 class="font-display font-semibold text-lg mb-2">
+                        Delete History Item
+                    </h3>
+                    <p class="text-sm text-[var(--text-secondary)] mb-3">
+                        This permanently deletes the session and all stored files
+                        from disk. This cannot be undone.
+                    </p>
+                    <p class="text-xs text-[var(--text-muted)] mb-2">
+                        Type the exact filename to confirm:
+                    </p>
+                    <p
+                        id="deleteTargetName"
+                        class="text-sm font-mono text-[var(--text-primary)] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 mb-3 break-all"
+                    ></p>
+                    <input
+                        id="deleteConfirmInput"
+                        type="text"
+                        autocomplete="off"
+                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring mb-3"
+                        placeholder="Enter exact filename"
+                    />
+                    <label
+                        class="flex items-center gap-2 text-xs text-[var(--text-secondary)] mb-4"
+                    >
+                        <input id="deleteAcknowledge" type="checkbox" class="w-4 h-4" />
+                        I understand this will permanently delete all files for this job.
+                    </label>
+                    <div class="flex justify-end gap-2">
+                        <button
+                            id="deleteCancelBtn"
+                            type="button"
+                            class="px-3 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="deleteConfirmBtn"
+                            type="button"
+                            class="px-3 py-2 rounded-xl text-sm bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled
+                        >
+                            Delete Permanently
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div
             id="transcriptionSettingsPanel"
             class="fixed top-24 left-1/2 -translate-x-1/2 z-40 hidden"

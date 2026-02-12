@@ -12,6 +12,7 @@ const state = {
   pollTimer: null,
   jobs: [],
   audioUrl: null,
+  deleteCandidateId: null,
 };
 
 const refs = {
@@ -70,6 +71,13 @@ const refs = {
   themeLightBtn: el("themeLightBtn"),
   themeDarkBtn: el("themeDarkBtn"),
   themeSystemBtn: el("themeSystemBtn"),
+  deleteModal: el("deleteModal"),
+  deleteBackdrop: el("deleteBackdrop"),
+  deleteTargetName: el("deleteTargetName"),
+  deleteConfirmInput: el("deleteConfirmInput"),
+  deleteAcknowledge: el("deleteAcknowledge"),
+  deleteCancelBtn: el("deleteCancelBtn"),
+  deleteConfirmBtn: el("deleteConfirmBtn"),
 };
 
 function getThemeIconMarkup(preference) {
@@ -281,6 +289,43 @@ function toggleSettings(show) {
   document.body.style.overflow = show ? "hidden" : "";
 }
 
+function canDeleteJob(job) {
+  return ["completed", "failed", "cancelled"].includes(job?.status);
+}
+
+function currentDeleteJob() {
+  return state.jobs.find((j) => j.id === state.deleteCandidateId) || null;
+}
+
+function updateDeleteConfirmState() {
+  const job = currentDeleteJob();
+  if (!job) {
+    refs.deleteConfirmBtn.disabled = true;
+    return;
+  }
+  const typed = (refs.deleteConfirmInput.value || "").trim();
+  const acknowledged = !!refs.deleteAcknowledge.checked;
+  refs.deleteConfirmBtn.disabled = !(acknowledged && typed === job.filename);
+}
+
+function toggleDeleteModal(show, job = null) {
+  refs.deleteModal.classList.toggle("hidden", !show);
+  if (!show) {
+    state.deleteCandidateId = null;
+    refs.deleteTargetName.textContent = "";
+    refs.deleteConfirmInput.value = "";
+    refs.deleteAcknowledge.checked = false;
+    refs.deleteConfirmBtn.disabled = true;
+    return;
+  }
+
+  state.deleteCandidateId = job?.id || null;
+  refs.deleteTargetName.textContent = job?.filename || "";
+  refs.deleteConfirmInput.value = "";
+  refs.deleteAcknowledge.checked = false;
+  refs.deleteConfirmBtn.disabled = true;
+}
+
 function toggleAdvancedPanel(force) {
   const show =
     typeof force === "boolean"
@@ -392,13 +437,25 @@ function renderSidebar() {
     const active =
       state.activeJobId === job.id ? " ring-1 ring-[var(--accent)] " : "";
     row.className += active;
+    const showDelete = state.currentTab === "history" && canDeleteJob(job);
     row.innerHTML = `
       <div class="flex items-start justify-between mb-2">
         <h4 class="font-medium text-sm text-[var(--text-primary)] line-clamp-1">${escapeHtml(job.filename)}</h4>
-        <span class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${statusClass(job.status)}">
-          <span class="inline-block w-1.5 h-1.5 rounded-full" style="background:${statusDotColor(job.status)}"></span>
-          <span>${job.status}</span>
-        </span>
+        <div class="flex items-center gap-1">
+          <span class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${statusClass(job.status)}">
+            <span class="inline-block w-1.5 h-1.5 rounded-full" style="background:${statusDotColor(job.status)}"></span>
+            <span>${job.status}</span>
+          </span>
+          ${
+            showDelete
+              ? `<button data-delete-id="${job.id}" type="button" class="ml-1 w-6 h-6 inline-flex items-center justify-center rounded-md border border-[var(--border-subtle)] text-[var(--error)] hover:bg-red-50/10 hover:border-[var(--error)]" title="Delete permanently" aria-label="Delete ${escapeHtml(job.filename)}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h8"/>
+            </svg>
+          </button>`
+              : ""
+          }
+        </div>
       </div>
       <div class="flex items-center gap-3 text-xs text-[var(--text-muted)]">
         <span>${formatDate(job.updated_at)}</span>
@@ -409,6 +466,13 @@ function renderSidebar() {
       await selectJob(job.id);
       renderSidebar();
     });
+    const deleteBtn = row.querySelector("button[data-delete-id]");
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleDeleteModal(true, job);
+      });
+    }
     refs.sidebarContent.appendChild(row);
   });
 }
@@ -597,6 +661,55 @@ async function generateSummary() {
   }
 }
 
+function resetOutputPanels() {
+  refs.progressBar.style.width = "0%";
+  refs.statusText.textContent = "Idle";
+  refs.transcriptionOutput.innerHTML =
+    '<span class="text-[var(--text-muted)] italic">Your transcription will appear here. Start recording or upload an audio file to begin.</span>';
+  refs.previewContent.innerHTML =
+    '<div class="text-[var(--text-muted)] italic">No preview logs yet.</div>';
+  renderSummary("");
+  refs.exportFormat.innerHTML = "";
+}
+
+async function deleteSelectedHistoryItem() {
+  const job = currentDeleteJob();
+  if (!job) {
+    setError("No job selected for deletion.");
+    return;
+  }
+  if (!canDeleteJob(job)) {
+    setError("Only completed, failed, or cancelled jobs can be deleted.");
+    return;
+  }
+
+  const confirmText = refs.deleteConfirmInput.value.trim();
+  const qs = new URLSearchParams({
+    confirm: "true",
+    confirm_text: confirmText,
+  });
+  const res = await fetch(`/api/jobs/${job.id}?${qs.toString()}`, {
+    method: "DELETE",
+  });
+  const body = await res.json();
+  if (!res.ok) {
+    setError(body.detail || "Delete failed.");
+    return;
+  }
+
+  toggleDeleteModal(false);
+  showToast("History item deleted");
+
+  if (state.activeJobId === job.id) {
+    state.activeJobId = null;
+    clearInterval(state.pollTimer);
+    state.pollTimer = null;
+    resetOutputPanels();
+  }
+
+  await refreshJobs();
+}
+
 async function copyFromNode(node, message) {
   const text = (node.textContent || "").trim();
   if (!text) return;
@@ -636,6 +749,14 @@ function attachEvents() {
     toggleSettings(false);
     showToast("Settings saved");
   });
+
+  refs.deleteBackdrop.addEventListener("click", () => toggleDeleteModal(false));
+  refs.deleteCancelBtn.addEventListener("click", () => toggleDeleteModal(false));
+  refs.deleteConfirmInput.addEventListener("input", updateDeleteConfirmState);
+  refs.deleteAcknowledge.addEventListener("change", updateDeleteConfirmState);
+  refs.deleteConfirmBtn.addEventListener("click", () =>
+    deleteSelectedHistoryItem().catch((e) => setError(e.message)),
+  );
 
   refs.toggleTranscriptionSettings.addEventListener("click", () =>
     toggleAdvancedPanel(),
@@ -740,6 +861,12 @@ function attachEvents() {
 
   document.addEventListener("click", (e) => {
     if (
+      !refs.deleteModal.classList.contains("hidden") &&
+      !refs.deleteModal.contains(e.target)
+    ) {
+      toggleDeleteModal(false);
+    }
+    if (
       !refs.themeMenu.contains(e.target) &&
       !refs.themeMenuBtn.contains(e.target)
     ) {
@@ -762,6 +889,7 @@ function attachEvents() {
     if (e.key === "Escape") {
       toggleSettings(false);
       toggleAdvancedPanel(false);
+      toggleDeleteModal(false);
       refs.exportMenu.classList.add("hidden");
       refs.themeMenu.classList.add("hidden");
     }

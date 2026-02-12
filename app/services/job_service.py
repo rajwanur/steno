@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import uuid
 from collections import deque
 from datetime import datetime
@@ -251,6 +252,26 @@ class JobService:
         if include_active and self.current_job_id:
             self.cancel_job(self.current_job_id)
         return cleared
+
+    def delete_job(self, job_id: str, confirm_text: str) -> JobState:
+        job = self.get_job(job_id)
+        if job.status in ("queued", "processing"):
+            raise RuntimeError("Only completed, failed, or cancelled jobs can be deleted.")
+
+        expected = (job.filename or "").strip()
+        provided = (confirm_text or "").strip()
+        if not expected or provided != expected:
+            raise RuntimeError("Confirmation text must exactly match the filename.")
+
+        self._remove_queued_job(job_id)
+        if self.current_job_id == job_id:
+            raise RuntimeError("Cannot delete a job that is currently active.")
+
+        self.jobs.pop(job_id, None)
+        job_dir = settings.jobs_dir / job_id
+        if job_dir.exists():
+            shutil.rmtree(job_dir)
+        return job
 
     async def regenerate_summary(self, job_id: str, style: str) -> JobState:
         job = self.get_job(job_id)

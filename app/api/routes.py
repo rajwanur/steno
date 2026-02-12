@@ -172,6 +172,29 @@ def clear_queue(
     return QueueControlResponse(message=f"Cancelled {cleared} queued job(s).")
 
 
+@router.delete("/jobs/{job_id}", response_model=QueueControlResponse)
+def delete_job(
+    job_id: str,
+    confirm: bool = False,
+    confirm_text: str = "",
+    service: JobService = Depends(get_job_service),
+) -> QueueControlResponse:
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Deletion requires explicit confirmation.",
+        )
+    try:
+        job = service.delete_job(job_id=job_id, confirm_text=confirm_text)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Job not found") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return QueueControlResponse(
+        message=f"Deleted '{job.filename}' and all associated files."
+    )
+
+
 @router.post("/jobs/{job_id}/summary", response_model=JobStatusResponse)
 async def regenerate_summary(
     job_id: str,
