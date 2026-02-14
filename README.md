@@ -1,24 +1,37 @@
-# WhisprX
+# Steno
 
-Production-oriented FastAPI app for media upload, WhisperX transcription/alignment/diarization, multi-format exports, and optional summary generation through an OpenAI-compatible API.
+Steno is a FastAPI-based transcription workspace built on WhisperX. It supports audio/video upload, alignment, optional diarization, multiple export formats, and AI summary generation through an OpenAI-compatible API.
 
-## Features
+## Current Status
 
-- Upload video/audio files (`mp4`, `mov`, `mkv`, `mp3`, `wav`, `m4a`, ...)
-- Auto-detect media type
-- Video to MP3 conversion using FFmpeg
+- Active and usable for local/self-hosted deployment.
+- UI supports:
+  - per-generation overrides before processing
+  - persisted global defaults in the Settings modal
+  - summary generation/regeneration
+  - direct summary export as Markdown (`.md`)
+- Job history is persisted on disk and reloads across restarts.
+
+## Key Features
+
+- Upload audio/video files (`mp3`, `wav`, `m4a`, `mp4`, `mov`, `mkv`, etc.)
+- Auto-detect media type and convert video to MP3 via FFmpeg
 - WhisperX transcription + timestamp alignment
-- Optional speaker diarization using WhisperX diarization pipeline
-- Download outputs: `txt`, `srt`, `vtt`, `tsv`, `json`
-- Optional summary generation (`short`, `detailed`, `bullet`, `action_items`)
-- Async background job processing with progress polling
-- Web UI for configuring model/language/device/diarization/summary/output formats
-- Job history persisted to disk with re-download support
-- In-UI preview for generated transcript outputs
-- Audio preview before transcription starts
-- Cancel active job / clear queued jobs from UI
-- Session recall: selecting a previous job re-applies its configuration
-- Post-transcription summary generation/regeneration with style templates
+- Optional speaker diarization (requires Hugging Face token)
+- Output export formats: `txt`, `srt`, `vtt`, `tsv`, `json`
+- Optional AI summaries: `short`, `detailed`, `bullet`, `action_items`
+- Async queue-based background processing
+- In-UI job history, progress, logs, and output preview
+- Global settings persisted in `storage/global_settings.json`
+
+## Tech Stack
+
+- Python 3.11+
+- FastAPI + Uvicorn
+- WhisperX
+- OpenAI Python SDK (OpenAI-compatible endpoints)
+- Jinja2 + Tailwind CSS
+- FFmpeg
 
 ## Project Structure
 
@@ -32,6 +45,7 @@ Production-oriented FastAPI app for media upload, WhisperX transcription/alignme
 │   ├── services
 │   │   ├── export_service.py
 │   │   ├── file_service.py
+│   │   ├── global_settings_service.py
 │   │   ├── job_service.py
 │   │   ├── summarization_service.py
 │   │   └── transcription_service.py
@@ -54,108 +68,116 @@ Production-oriented FastAPI app for media upload, WhisperX transcription/alignme
 └── README.md
 ```
 
-## Local Run (Virtual Environment First)
+## Installation
 
-1. Install prerequisites:
+### 1. Prerequisites
+
 - Python 3.11+
-- FFmpeg
-- `uv` (recommended): `pip install uv`
+- FFmpeg available on PATH
+- Git
+- Recommended: `uv`
 
-2. Create and activate a virtual environment with `uv`:
+Install `uv` (if missing):
+
+```bash
+pip install uv
+```
+
+### 2. Create and Activate Virtual Environment
 
 ```bash
 uv venv .venv
 ```
 
 PowerShell:
+
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
 macOS/Linux:
+
 ```bash
 source .venv/bin/activate
 ```
 
-3. Install dependencies inside the virtual environment:
+### 3. Install Dependencies
 
 ```bash
 uv pip install -r requirements.txt
 ```
 
-4. Configure environment variables:
+### 4. Configure Environment
 
 ```bash
 cp .env.example .env
-# set HF_TOKEN for diarization
-# set LLM_API_BASE + LLM_API_KEY if summary is enabled
 ```
 
-5. Run the app from the same virtual environment:
+Set at least the values you need:
+
+- `HF_TOKEN` (required only if diarization is enabled)
+- `LLM_API_BASE`, `LLM_API_KEY`, `LLM_MODEL` (required only if summaries are enabled)
+
+### 5. Run
 
 ```bash
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-6. Open `http://localhost:8000`
+Open `http://localhost:8000`.
 
-Device selection note:
-- Use `auto` unless you have a known-good GPU stack.
-- `cuda` requires a CUDA/ROCm-capable PyTorch runtime.
-- On many AMD Windows environments, CPU is the stable path.
+## Configuration Reference (`.env`)
 
-### Pip Fallback (if you do not use uv)
+| Variable | Purpose | Required |
+|---|---|---|
+| `APP_HOST` | Uvicorn host bind | No |
+| `APP_PORT` | Uvicorn port | No |
+| `APP_RELOAD` | Auto reload in dev | No |
+| `DEFAULT_MODEL` | Default WhisperX model | No |
+| `DEFAULT_LANGUAGE` | Default language code | No |
+| `DEFAULT_BATCH_SIZE` | Default batch size | No |
+| `DEFAULT_DEVICE` | `auto`, `cpu`, `cuda` | No |
+| `COMPUTE_TYPE` | `float32`, `float16`, `int8` | No |
+| `HF_TOKEN` | Hugging Face auth for diarization | If diarization enabled |
+| `LLM_API_BASE` | OpenAI-compatible base URL | If summaries enabled |
+| `LLM_API_KEY` | LLM API key | If summaries enabled |
+| `LLM_MODEL` | Model name for summaries | If summaries enabled |
+
+Note: many defaults can also be managed from the UI Settings modal. UI values are persisted to `storage/global_settings.json`.
+
+## Docker
+
+Build and run:
 
 ```bash
-python -m venv .venv
+docker compose up --build
 ```
 
-Activate:
-- PowerShell: `.venv\Scripts\Activate.ps1`
-- macOS/Linux: `source .venv/bin/activate`
-
-Install and run:
-
-```bash
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
+The service is exposed at `http://localhost:8000` and persists data to `./storage`.
 
 ## API Endpoints
 
 - `GET /api/config`
-- `POST /api/jobs` (multipart upload + config fields)
+- `GET /api/settings/global`
+- `PUT /api/settings/global`
+- `POST /api/jobs`
+- `GET /api/jobs`
 - `GET /api/jobs/{job_id}`
+- `GET /api/jobs/{job_id}/output/{fmt}`
 - `GET /api/jobs/{job_id}/download/{fmt}`
+- `GET /api/jobs/{job_id}/summary/export` (download AI summary as `.md`)
+- `POST /api/jobs/{job_id}/summary`
+- `POST /api/jobs/{job_id}/cancel`
+- `POST /api/queue/clear`
+- `DELETE /api/jobs/{job_id}`
 
-## WhisperX Flow
+## Operational Notes
 
-This implementation follows the official WhisperX flow:
-1. `whisperx.load_model(...).transcribe(...)`
-2. `whisperx.load_align_model(...)` and `whisperx.align(...)`
-3. Optional `whisperx.DiarizationPipeline(...)`
-4. `whisperx.assign_word_speakers(...)`
+- Prefer `device=auto` unless your GPU runtime is validated.
+- On many Windows AMD setups, CPU is the most stable option.
+- Diarization may fail without a valid HF token or model access.
+- `torchaudio` deprecation warnings can appear in logs; they are warnings and do not necessarily indicate job failure.
 
-For diarization, set `HF_TOKEN` with access to required diarization models.
+## License
 
-## Troubleshooting
-
-### PyTorch 2.6+ `weights_only` error during diarization
-
-If you see an error like:
-- `Weights only load failed`
-- `Unsupported global: omegaconf.listconfig.ListConfig`
-
-the app now includes a compatibility fix in `app/services/transcription_service.py` for trusted WhisperX/pyannote checkpoints.
-
-If you still hit the issue in an existing environment:
-
-1. Reinstall dependencies in a clean virtual environment.
-2. Ensure torch and whisperx dependencies are consistent.
-3. As a temporary workaround, disable diarization in the UI.
-
-If needed, you can also pin torch below 2.6:
-
-```bash
-uv pip install "torch<2.6"
-```
+MIT

@@ -36,6 +36,12 @@ class JobService:
     def _utcnow() -> datetime:
         return datetime.now(timezone.utc)
 
+    @staticmethod
+    def _ensure_aware_utc(value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
     async def start_worker(self) -> None:
         self._load_jobs_from_disk()
         if self.worker_task is None:
@@ -82,6 +88,9 @@ class JobService:
         return job
 
     def list_jobs(self) -> List[JobListItem]:
+        for job in self.jobs.values():
+            job.created_at = self._ensure_aware_utc(job.created_at)
+            job.updated_at = self._ensure_aware_utc(job.updated_at)
         jobs = sorted(self.jobs.values(), key=lambda j: j.updated_at, reverse=True)
         return [
             JobListItem(
@@ -225,6 +234,8 @@ class JobService:
             try:
                 raw = json.loads(path.read_text(encoding="utf-8"))
                 job = JobState.model_validate(raw)
+                job.created_at = self._ensure_aware_utc(job.created_at)
+                job.updated_at = self._ensure_aware_utc(job.updated_at)
                 if job.status in ("queued", "processing"):
                     job.status = "failed"
                     job.step = "interrupted"
