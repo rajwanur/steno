@@ -1,8 +1,33 @@
 from __future__ import annotations
 
 import os
+import inspect
+import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, cast
+
+# pyannote emits this at import time when torchcodec/ffmpeg dynamic deps are unavailable.
+# We pass in-memory audio for diarization, so decoding through torchcodec is not required.
+warnings.filterwarnings(
+    "ignore",
+    message=r"(?s).*torchcodec is not installed correctly so built-in audio decoding will fail.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*torchaudio\._backend\.list_audio_backends has been deprecated.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*speechbrain\.pretrained.*was deprecated.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*In 2\.9, this function's implementation will be changed to use torchaudio\.load_with_torchcodec.*",
+    category=UserWarning,
+)
 
 import whisperx
 
@@ -76,6 +101,23 @@ class TranscriptionService:
                 "Installed whisperx version does not expose diarization APIs. "
                 "Please install a whisperx build with diarization support."
             ) from exc
+
+    @staticmethod
+    def _build_diarization_pipeline(
+        diarization_pipeline: Any,
+        hf_token: str,
+        device: str,
+    ) -> Any:
+        # WhisperX changed auth kwarg from `use_auth_token` to `token`.
+        sig = inspect.signature(diarization_pipeline.__init__)
+        kwargs: Dict[str, Any] = {"device": device}
+        if "token" in sig.parameters:
+            kwargs["token"] = hf_token
+        elif "use_auth_token" in sig.parameters:
+            kwargs["use_auth_token"] = hf_token
+        else:
+            kwargs["token"] = hf_token
+        return diarization_pipeline(**kwargs)
 
     @staticmethod
     def _normalize_diarization_output(raw: Any) -> Any:
@@ -153,13 +195,21 @@ class TranscriptionService:
             if progress_cb:
                 progress_cb(75, "diarizing", "Running speaker diarization.")
             diarization_pipeline, assign_word_speakers = self._get_diarization_components()
-            diarize_model = diarization_pipeline(
-                use_auth_token=effective_hf_token,
-                device=device,
-            )
-            diarize_raw = diarize_model(str(audio_path))
-            diarize_segments = self._normalize_diarization_output(diarize_raw)
-            result = assign_word_speakers(cast(Any, diarize_segments), cast(Any, result))
+            try:
+                diarize_model = self._build_diarization_pipeline(
+                    diarization_pipeline, effective_hf_token, device
+                )
+                diarize_raw = diarize_model(str(audio_path))
+                diarize_segments = self._normalize_diarization_output(diarize_raw)
+                result = assign_word_speakers(cast(Any, diarize_segments), cast(Any, result))
+            except Exception:
+                # Keep transcript generation resilient if diarization fails at runtime.
+                if progress_cb:
+                    progress_cb(
+                        82,
+                        "diarizing",
+                        "Diarization failed; continuing without speaker labels.",
+                    )
 
         if progress_cb:
             progress_cb(88, "finalizing", "Finalizing transcript output.")
