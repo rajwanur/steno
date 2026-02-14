@@ -818,8 +818,11 @@
                         </div>
                     </div>
 
-        <div id="summaryActions" class="p-4 border-t border-[var(--border-subtle)]">
-                        <div class="grid grid-cols-2 gap-2">
+                    <div
+                        id="summaryActions"
+                        class="p-4 border-t border-[var(--border-subtle)]"
+                    >
+                        <div class="grid grid-cols-3 gap-2">
                             <button
                                 id="regenerateSummaryBtn"
                                 type="button"
@@ -859,6 +862,26 @@
                                     />
                                 </svg>
                                 Generate
+                            </button>
+                            <button
+                                id="downloadSummaryBtn"
+                                type="button"
+                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M12 4v10m0 0l-4-4m4 4l4-4M4 20h16"
+                                    />
+                                </svg>
+                                Export
                             </button>
                         </div>
                     </div>
@@ -907,44 +930,105 @@
                                 Global Defaults
                             </h3>
                             <p class="text-xs text-[var(--text-muted)] mb-3">
-                                These values are used as defaults for each new generation. You can still override them before pressing Process.
+                                These values are used as defaults for each new
+                                generation. You can still override them before
+                                pressing Process.
                             </p>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Model</label>
-                                    <select id="settingsDefaultModel" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"></select>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Default Model</label
+                                    >
+                                    <select
+                                        id="settingsDefaultModel"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    ></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Language</label>
-                                    <select id="settingsDefaultLanguage" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"></select>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Default Language</label
+                                    >
+                                    <select
+                                        id="settingsDefaultLanguage"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    ></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Batch Size</label>
-                                    <input id="settingsDefaultBatchSize" type="number" min="1" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Default Batch Size</label
+                                    >
+                                    <input
+                                        id="settingsDefaultBatchSize"
+                                        type="number"
+                                        min="1"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Device</label>
-                                    <select id="settingsDefaultDevice" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"></select>
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Default Device</label
+                                    >
+                                    <select
+                                        id="settingsDefaultDevice"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    ></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Compute Type</label>
-                                    <select id="settingsComputeType" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring">
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Default Compute Type</label
+                                    >
+                                    <select
+                                        id="settingsComputeType"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    >
                                         <option value="float32">float32</option>
                                         <option value="float16">float16</option>
                                         <option value="int8">int8</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">App Host (restart required)</label>
-                                    <input id="settingsAppHost" type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="0.0.0.0" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >App Host (restart required)</label
+                                    >
+                                    <input
+                                        id="settingsAppHost"
+                                        type="text"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        placeholder="0.0.0.0"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">App Port (restart required)</label>
-                                    <input id="settingsAppPort" type="number" min="1" max="65535" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="8000" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >App Port (restart required)</label
+                                    >
+                                    <input
+                                        id="settingsAppPort"
+                                        type="number"
+                                        min="1"
+                                        max="65535"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        placeholder="8000"
+                                    />
                                 </div>
-                                <label class="col-span-2 flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2">
-                                    <span class="text-sm text-[var(--text-secondary)]">App Reload (restart required)</span>
-                                    <input id="settingsAppReload" type="checkbox" class="w-4 h-4" />
+                                <label
+                                    class="col-span-2 flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2"
+                                >
+                                    <span
+                                        class="text-sm text-[var(--text-secondary)]"
+                                        >App Reload (restart required)</span
+                                    >
+                                    <input
+                                        id="settingsAppReload"
+                                        type="checkbox"
+                                        class="w-4 h-4"
+                                    />
                                 </label>
                             </div>
                         </div>
@@ -953,24 +1037,57 @@
                                 LLM & Diarization
                             </h3>
                             <p class="text-xs text-[var(--text-muted)] mb-3">
-                                Added from .env defaults. These are used globally by summary generation and diarization.
+                                Added from .env defaults. These are used
+                                globally by summary generation and diarization.
                             </p>
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="col-span-2">
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">LLM API Base</label>
-                                    <input id="settingsLlmApiBase" type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="https://..." />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >LLM API Base</label
+                                    >
+                                    <input
+                                        id="settingsLlmApiBase"
+                                        type="text"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        placeholder="https://..."
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">LLM API Key</label>
-                                    <input id="settingsLlmApiKey" type="password" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="api key" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >LLM API Key</label
+                                    >
+                                    <input
+                                        id="settingsLlmApiKey"
+                                        type="password"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        placeholder="api key"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">LLM Model</label>
-                                    <input id="settingsLlmModel" type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="gpt-4o-mini" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >LLM Model</label
+                                    >
+                                    <input
+                                        id="settingsLlmModel"
+                                        type="text"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        placeholder="gpt-4o-mini"
+                                    />
                                 </div>
                                 <div class="col-span-2">
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">HF Token (for diarization)</label>
-                                    <input id="settingsHfToken" type="password" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="hf_..." />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >HF Token (for diarization)</label
+                                    >
+                                    <input
+                                        id="settingsHfToken"
+                                        type="password"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        placeholder="hf_..."
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -978,59 +1095,168 @@
                             <h3 class="font-display font-semibold text-sm mb-3">
                                 Upcoming / Candidate Cleanup
                             </h3>
-                            <div class="space-y-2 text-xs text-[var(--text-muted)]">
-                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">Upcoming: per-generation summary temperature, max tokens, custom prompt, confidence scores, and integration exporters.</div>
-                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">Candidate deletion: punctuation manual review mode and duplicate speaker-detection selectors (diarization remains canonical).</div>
-                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">Server startup settings (`APP_HOST`, `APP_PORT`, `APP_RELOAD`) remain deployment-level and are not applied live from UI.</div>
+                            <div
+                                class="space-y-2 text-xs text-[var(--text-muted)]"
+                            >
+                                <div
+                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                >
+                                    Upcoming: per-generation summary
+                                    temperature, max tokens, custom prompt,
+                                    confidence scores, and integration
+                                    exporters.
+                                </div>
+                                <div
+                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                >
+                                    Candidate deletion: punctuation manual
+                                    review mode and duplicate speaker-detection
+                                    selectors (diarization remains canonical).
+                                </div>
+                                <div
+                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                >
+                                    Server startup settings (`APP_HOST`,
+                                    `APP_PORT`, `APP_RELOAD`) remain
+                                    deployment-level and are not applied live
+                                    from UI.
+                                </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mt-4 opacity-70">
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Speaker Detection (candidate deprecation)</label>
-                                    <select id="settingsSpeakerDetection" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Speaker Detection (candidate
+                                        deprecation)</label
+                                    >
+                                    <select
+                                        id="settingsSpeakerDetection"
+                                        disabled
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                    >
                                         <option>Automatic</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Punctuation (candidate deprecation)</label>
-                                    <select id="settingsPunctuation" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Punctuation (candidate
+                                        deprecation)</label
+                                    >
+                                    <select
+                                        id="settingsPunctuation"
+                                        disabled
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                    >
                                         <option>Automatic</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Profanity Filter (upcoming)</label>
-                                    <select id="settingsProfanity" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Profanity Filter (upcoming)</label
+                                    >
+                                    <select
+                                        id="settingsProfanity"
+                                        disabled
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                    >
                                         <option>Enabled</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Output Format Preset (upcoming)</label>
-                                    <select id="settingsOutputFormat" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Output Format Preset (upcoming)</label
+                                    >
+                                    <select
+                                        id="settingsOutputFormat"
+                                        disabled
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                    >
                                         <option>Plain Text</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Summary Model (upcoming per-job override)</label>
-                                    <input id="settingsSummaryModel" disabled type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm" value="Uses global LLM model" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Summary Model (upcoming per-job
+                                        override)</label
+                                    >
+                                    <input
+                                        id="settingsSummaryModel"
+                                        disabled
+                                        type="text"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                        value="Uses global LLM model"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Temperature (upcoming)</label>
-                                    <input id="settingsTemperature" disabled type="range" min="0" max="100" value="20" class="w-full" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Temperature (upcoming)</label
+                                    >
+                                    <input
+                                        id="settingsTemperature"
+                                        disabled
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value="20"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Max Tokens (upcoming)</label>
-                                    <input id="settingsMaxTokens" disabled type="number" value="1024" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Max Tokens (upcoming)</label
+                                    >
+                                    <input
+                                        id="settingsMaxTokens"
+                                        disabled
+                                        type="number"
+                                        value="1024"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Custom Prompt (upcoming)</label>
-                                    <input id="settingsCustomPrompt" disabled type="text" value="Not implemented yet" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm" />
+                                    <label
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Custom Prompt (upcoming)</label
+                                    >
+                                    <input
+                                        id="settingsCustomPrompt"
+                                        disabled
+                                        type="text"
+                                        value="Not implemented yet"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                    />
                                 </div>
-                                <label class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed">
-                                    <span class="text-sm">Notion (upcoming)</span>
-                                    <input id="settingsNotion" disabled type="checkbox" class="w-5 h-5" />
+                                <label
+                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed"
+                                >
+                                    <span class="text-sm"
+                                        >Notion (upcoming)</span
+                                    >
+                                    <input
+                                        id="settingsNotion"
+                                        disabled
+                                        type="checkbox"
+                                        class="w-5 h-5"
+                                    />
                                 </label>
-                                <label class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed">
-                                    <span class="text-sm">Google Docs (upcoming)</span>
-                                    <input id="settingsGoogleDocs" disabled type="checkbox" class="w-5 h-5" />
+                                <label
+                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed"
+                                >
+                                    <span class="text-sm"
+                                        >Google Docs (upcoming)</span
+                                    >
+                                    <input
+                                        id="settingsGoogleDocs"
+                                        disabled
+                                        type="checkbox"
+                                        class="w-5 h-5"
+                                    />
                                 </label>
                             </div>
                         </div>
@@ -1039,25 +1265,60 @@
                                 About
                             </h3>
                             <div class="space-y-2 text-sm">
-                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                                    <div class="font-medium" id="aboutName">{{ app_name }}</div>
-                                    <div class="text-xs text-[var(--text-muted)] mt-1" id="aboutDescription">
-                                        WhisperX-powered transcription and summary workspace.
+                                <div
+                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                >
+                                    <div class="font-medium" id="aboutName">
+                                        {{ app_name }}
+                                    </div>
+                                    <div
+                                        class="text-xs text-[var(--text-muted)] mt-1"
+                                        id="aboutDescription"
+                                    >
+                                        WhisperX-powered transcription and
+                                        summary workspace.
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                                        <div class="text-[var(--text-muted)]">Version</div>
-                                        <div class="mt-1 font-medium" id="aboutVersion">0.1.0</div>
+                                    <div
+                                        class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                    >
+                                        <div class="text-[var(--text-muted)]">
+                                            Version
+                                        </div>
+                                        <div
+                                            class="mt-1 font-medium"
+                                            id="aboutVersion"
+                                        >
+                                            0.1.0
+                                        </div>
                                     </div>
-                                    <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                                        <div class="text-[var(--text-muted)]">License</div>
-                                        <div class="mt-1 font-medium" id="aboutLicense">MIT</div>
+                                    <div
+                                        class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                    >
+                                        <div class="text-[var(--text-muted)]">
+                                            License
+                                        </div>
+                                        <div
+                                            class="mt-1 font-medium"
+                                            id="aboutLicense"
+                                        >
+                                            MIT
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                                    <div class="text-xs text-[var(--text-muted)] mb-2">Technologies</div>
-                                    <div id="aboutTechnologies" class="flex flex-wrap gap-1.5"></div>
+                                <div
+                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                >
+                                    <div
+                                        class="text-xs text-[var(--text-muted)] mb-2"
+                                    >
+                                        Technologies
+                                    </div>
+                                    <div
+                                        id="aboutTechnologies"
+                                        class="flex flex-wrap gap-1.5"
+                                    ></div>
                                 </div>
                             </div>
                         </div>
@@ -1099,8 +1360,8 @@
                         Delete History Item
                     </h3>
                     <p class="text-sm text-[var(--text-secondary)] mb-3">
-                        This permanently deletes the session and all stored files
-                        from disk. This cannot be undone.
+                        This permanently deletes the session and all stored
+                        files from disk. This cannot be undone.
                     </p>
                     <p class="text-xs text-[var(--text-muted)] mb-2">
                         Type the exact filename to confirm:
@@ -1119,8 +1380,13 @@
                     <label
                         class="flex items-center gap-2 text-xs text-[var(--text-secondary)] mb-4"
                     >
-                        <input id="deleteAcknowledge" type="checkbox" class="w-4 h-4" />
-                        I understand this will permanently delete all files for this job.
+                        <input
+                            id="deleteAcknowledge"
+                            type="checkbox"
+                            class="w-4 h-4"
+                        />
+                        I understand this will permanently delete all files for
+                        this job.
                     </label>
                     <div class="flex justify-end gap-2">
                         <button

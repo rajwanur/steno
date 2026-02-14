@@ -79,6 +79,7 @@ const refs = {
   summaryType: el("summaryType"),
   generateSummaryBtn: el("generateSummaryBtn"),
   regenerateSummaryBtn: el("regenerateSummaryBtn"),
+  downloadSummaryBtn: el("downloadSummaryBtn"),
   copySummaryBtn: el("copySummaryBtn"),
   summaryOutput: el("summaryOutput"),
   toast: el("toast"),
@@ -377,12 +378,16 @@ function renderAboutInfo(about) {
   if (refs.aboutName) refs.aboutName.textContent = about.name || "Steno";
   if (refs.aboutDescription)
     refs.aboutDescription.textContent =
-      about.description || "WhisperX-powered transcription and summary workspace.";
-  if (refs.aboutVersion) refs.aboutVersion.textContent = about.version || "0.1.0";
+      about.description ||
+      "WhisperX-powered transcription and summary workspace.";
+  if (refs.aboutVersion)
+    refs.aboutVersion.textContent = about.version || "0.1.0";
   if (refs.aboutLicense) refs.aboutLicense.textContent = about.license || "MIT";
   if (refs.aboutTechnologies) {
     refs.aboutTechnologies.innerHTML = "";
-    const technologies = Array.isArray(about.technologies) ? about.technologies : [];
+    const technologies = Array.isArray(about.technologies)
+      ? about.technologies
+      : [];
     technologies.forEach((tech) => {
       const chip = document.createElement("span");
       chip.className =
@@ -409,19 +414,31 @@ function applyGlobalSettings(settings) {
   if (!settings) return;
   state.globalSettings = settings;
 
-  if (refs.settingsDefaultModel) refs.settingsDefaultModel.value = settings.default_model || "";
-  syncLanguageDefaultOptions(settings.default_language || refs.language.value || "en");
+  if (refs.settingsDefaultModel)
+    refs.settingsDefaultModel.value = settings.default_model || "";
+  syncLanguageDefaultOptions(
+    settings.default_language || refs.language.value || "en",
+  );
   if (refs.settingsDefaultBatchSize)
     refs.settingsDefaultBatchSize.value = settings.default_batch_size ?? 16;
-  if (refs.settingsDefaultDevice) refs.settingsDefaultDevice.value = settings.default_device || "auto";
-  if (refs.settingsComputeType) refs.settingsComputeType.value = settings.compute_type || "float32";
-  if (refs.settingsLlmApiBase) refs.settingsLlmApiBase.value = settings.llm_api_base || "";
-  if (refs.settingsLlmApiKey) refs.settingsLlmApiKey.value = settings.llm_api_key || "";
-  if (refs.settingsLlmModel) refs.settingsLlmModel.value = settings.llm_model || "";
-  if (refs.settingsHfToken) refs.settingsHfToken.value = settings.hf_token || "";
-  if (refs.settingsAppHost) refs.settingsAppHost.value = settings.app_host || "0.0.0.0";
-  if (refs.settingsAppPort) refs.settingsAppPort.value = settings.app_port ?? 8000;
-  if (refs.settingsAppReload) refs.settingsAppReload.checked = !!settings.app_reload;
+  if (refs.settingsDefaultDevice)
+    refs.settingsDefaultDevice.value = settings.default_device || "auto";
+  if (refs.settingsComputeType)
+    refs.settingsComputeType.value = settings.compute_type || "float32";
+  if (refs.settingsLlmApiBase)
+    refs.settingsLlmApiBase.value = settings.llm_api_base || "";
+  if (refs.settingsLlmApiKey)
+    refs.settingsLlmApiKey.value = settings.llm_api_key || "";
+  if (refs.settingsLlmModel)
+    refs.settingsLlmModel.value = settings.llm_model || "";
+  if (refs.settingsHfToken)
+    refs.settingsHfToken.value = settings.hf_token || "";
+  if (refs.settingsAppHost)
+    refs.settingsAppHost.value = settings.app_host || "0.0.0.0";
+  if (refs.settingsAppPort)
+    refs.settingsAppPort.value = settings.app_port ?? 8000;
+  if (refs.settingsAppReload)
+    refs.settingsAppReload.checked = !!settings.app_reload;
 
   refs.model_name.value = settings.default_model || refs.model_name.value;
   refs.language.value = settings.default_language || refs.language.value;
@@ -489,7 +506,11 @@ async function loadConfig() {
   setSelectOptions(refs.model_name, cfg.models, cfg.defaults.model);
   setSelectOptions(refs.settingsDefaultModel, cfg.models, cfg.defaults.model);
   setSelectOptions(refs.device, cfg.devices, cfg.defaults.device);
-  setSelectOptions(refs.settingsDefaultDevice, cfg.devices, cfg.defaults.device);
+  setSelectOptions(
+    refs.settingsDefaultDevice,
+    cfg.devices,
+    cfg.defaults.device,
+  );
   syncLanguageDefaultOptions(cfg.defaults.language || "en");
   renderAboutInfo(cfg.about);
 
@@ -770,6 +791,24 @@ async function generateSummary() {
   }
 }
 
+async function downloadSummaryMarkdown() {
+  if (!state.activeJobId) {
+    setError("Select a session first.");
+    return;
+  }
+  try {
+    const check = await fetch(`/api/jobs/${state.activeJobId}/summary/export`);
+    if (!check.ok) {
+      const body = await check.json().catch(() => ({}));
+      setError(body.detail || "Summary markdown download failed.");
+      return;
+    }
+    window.location.href = `/api/jobs/${state.activeJobId}/summary/export`;
+  } catch {
+    setError("Summary markdown download failed.");
+  }
+}
+
 function resetOutputPanels() {
   refs.progressBar.style.width = "0%";
   refs.statusText.textContent = "Idle";
@@ -876,7 +915,9 @@ function attachEvents() {
   });
 
   refs.deleteBackdrop.addEventListener("click", () => toggleDeleteModal(false));
-  refs.deleteCancelBtn.addEventListener("click", () => toggleDeleteModal(false));
+  refs.deleteCancelBtn.addEventListener("click", () =>
+    toggleDeleteModal(false),
+  );
   refs.deleteConfirmInput.addEventListener("input", updateDeleteConfirmState);
   refs.deleteAcknowledge.addEventListener("change", updateDeleteConfirmState);
   refs.deleteConfirmBtn.addEventListener("click", () =>
@@ -981,9 +1022,13 @@ function attachEvents() {
   refs.regenerateSummaryBtn.addEventListener("click", () =>
     generateSummary().catch((e) => setError(e.message)),
   );
+  refs.downloadSummaryBtn.addEventListener("click", () =>
+    downloadSummaryMarkdown().catch((e) => setError(e.message)),
+  );
 
   refs.generateSummaryBtn.style.pointerEvents = "auto";
   refs.regenerateSummaryBtn.style.pointerEvents = "auto";
+  refs.downloadSummaryBtn.style.pointerEvents = "auto";
 
   document.addEventListener("click", (e) => {
     if (
