@@ -2,6 +2,10 @@
 
 Steno is a FastAPI-based transcription workspace built on WhisperX. It supports audio/video upload, alignment, optional diarization, multiple export formats, and AI summary generation through an OpenAI-compatible API.
 
+## Screenshot
+
+![Steno application screenshot](static/app_interface.png)
+
 ## Current Status
 
 - Active and usable for local/self-hosted deployment.
