@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import subprocess
 from pathlib import Path
+from typing import Literal
 
 from fastapi import UploadFile
 
@@ -20,10 +21,15 @@ class FileService:
                     break
                 out.write(chunk)
 
-    def get_media_type(self, path: Path) -> str:
+    def get_media_type(self, path: Path) -> Literal["audio", "video"]:
         return detect_media_type(path)
 
-    async def ensure_audio_mp3(self, source_path: Path, job_dir: Path, media_type: str) -> Path:
+    async def ensure_audio_mp3(
+        self,
+        source_path: Path,
+        job_dir: Path,
+        media_type: Literal["audio", "video"],
+    ) -> Path:
         if media_type == "audio":
             return source_path
         target = job_dir / "input.mp3"

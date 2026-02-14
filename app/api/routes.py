@@ -16,6 +16,7 @@ from app.schemas import (
     JobListItem,
     JobStatusResponse,
     QueueControlResponse,
+    SummaryStyle,
     SummaryRequest,
 )
 from app.services.job_service import JobService
@@ -77,7 +78,7 @@ async def create_job(
     compute_type: str | None = Form(None),
     diarization: bool = Form(True),
     summary_enabled: bool = Form(False),
-    summary_style: str = Form("short"),
+    summary_style: SummaryStyle = Form("short"),
     output_formats: str = Form("[\"txt\",\"srt\",\"vtt\",\"json\"]"),
     service: JobService = Depends(get_job_service),
 ) -> JobCreateResponse:

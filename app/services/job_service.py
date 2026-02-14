@@ -4,8 +4,7 @@ import asyncio
 import json
 import shutil
 import uuid
-from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
 
@@ -32,6 +31,10 @@ class JobService:
         self.queue: asyncio.Queue[str] = asyncio.Queue()
         self.worker_task: asyncio.Task | None = None
         self.current_job_id: str | None = None
+
+    @staticmethod
+    def _utcnow() -> datetime:
+        return datetime.now(timezone.utc)
 
     async def start_worker(self) -> None:
         self._load_jobs_from_disk()
@@ -105,6 +108,8 @@ class JobService:
 
     async def _process_job(self, job_id: str) -> None:
         job = self.get_job(job_id)
+        if job.status == "cancelled":
+            return
         if job.cancel_requested:
             self._mark_cancelled(job, "Cancelled before processing started.")
             return
@@ -113,7 +118,7 @@ class JobService:
         job.status = "processing"
         job.progress = 10
         job.step = "preparing"
-        job.updated_at = datetime.utcnow()
+        job.updated_at = self._utcnow()
         self._push_event(job, "Started processing.")
         self._save_job(job)
 
@@ -125,7 +130,7 @@ class JobService:
                     raise asyncio.CancelledError("Cancellation requested by user.")
                 job.progress = progress
                 job.step = step
-                job.updated_at = datetime.utcnow()
+                job.updated_at = self._utcnow()
                 self._push_event(job, event)
                 self._save_job(job)
 
@@ -139,7 +144,7 @@ class JobService:
 
             job.progress = 70
             job.step = "exporting"
-            job.updated_at = datetime.utcnow()
+            job.updated_at = self._utcnow()
             self._push_event(job, "Generating output files.")
             self._save_job(job)
 
@@ -161,7 +166,7 @@ class JobService:
             if job.params.summary_enabled:
                 job.progress = 85
                 job.step = "summarizing"
-                job.updated_at = datetime.utcnow()
+                job.updated_at = self._utcnow()
                 self._push_event(job, "Generating summary.")
                 self._save_job(job)
                 summary = await asyncio.to_thread(
@@ -178,7 +183,7 @@ class JobService:
             job.status = "completed"
             job.progress = 100
             job.step = "done"
-            job.updated_at = datetime.utcnow()
+            job.updated_at = self._utcnow()
             self._push_event(job, "Completed successfully.")
             self._save_job(job)
 
@@ -189,7 +194,7 @@ class JobService:
             job.progress = 100
             job.step = "failed"
             job.error = str(exc)
-            job.updated_at = datetime.utcnow()
+            job.updated_at = self._utcnow()
             self._push_event(job, f"Failed: {job.error}")
             self._save_job(job)
         finally:
@@ -198,7 +203,7 @@ class JobService:
 
     @staticmethod
     def _push_event(job: JobState, message: str) -> None:
-        ts = datetime.utcnow().strftime("%H:%M:%S")
+        ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
         entry = f"[{ts}] {message}"
         if not job.events or job.events[-1] != entry:
             job.events.append(entry)
@@ -224,7 +229,7 @@ class JobService:
                     job.status = "failed"
                     job.step = "interrupted"
                     job.error = "Server restarted before job completion."
-                    job.updated_at = datetime.utcnow()
+                    job.updated_at = self._utcnow()
                     self._push_event(job, "Marked interrupted after restart.")
                     self._save_job(job)
                 self.jobs[job.id] = job
@@ -240,17 +245,16 @@ class JobService:
         self._push_event(job, "Cancellation requested.")
 
         if job.status == "queued":
-            self._remove_queued_job(job_id)
-            self._mark_cancelled(job, "Removed from queue.")
+            self._mark_cancelled(job, "Cancelled before execution.")
         else:
             job.step = "cancelling"
-            job.updated_at = datetime.utcnow()
+            job.updated_at = self._utcnow()
             self._save_job(job)
         return job
 
     def clear_queue(self, include_active: bool = True) -> int:
         cleared = 0
-        queued_ids = list(self.queue._queue)  # noqa: SLF001
+        queued_ids = [j.id for j in self.jobs.values() if j.status == "queued"]
         for job_id in queued_ids:
             try:
                 self.cancel_job(job_id)
@@ -271,7 +275,6 @@ class JobService:
         if not expected or provided != expected:
             raise RuntimeError("Confirmation text must exactly match the filename.")
 
-        self._remove_queued_job(job_id)
         if self.current_job_id == job_id:
             raise RuntimeError("Cannot delete a job that is currently active.")
 
@@ -291,7 +294,7 @@ class JobService:
             raise RuntimeError("Transcript is empty; cannot generate summary.")
 
         job.step = "summarizing"
-        job.updated_at = datetime.utcnow()
+        job.updated_at = self._utcnow()
         self._push_event(job, f"Generating '{style}' summary.")
         self._save_job(job)
 
@@ -307,7 +310,7 @@ class JobService:
         job.result.summary = summary
         job.result.summaries[style] = summary
         job.step = "done" if job.status == "completed" else job.step
-        job.updated_at = datetime.utcnow()
+        job.updated_at = self._utcnow()
         self._push_event(job, f"Summary '{style}' generated.")
         self._save_job(job)
         return job
@@ -320,15 +323,11 @@ class JobService:
             return " ".join((seg.get("text", "").strip() for seg in job.result.segments)).strip()
         return ""
 
-    def _remove_queued_job(self, job_id: str) -> None:
-        q = self.queue._queue  # noqa: SLF001
-        self.queue._queue = deque((x for x in q if x != job_id))  # noqa: SLF001
-
     def _mark_cancelled(self, job: JobState, message: str) -> None:
         job.status = "cancelled"
         job.progress = 100
         job.step = "cancelled"
         job.error = None
-        job.updated_at = datetime.utcnow()
+        job.updated_at = self._utcnow()
         self._push_event(job, message)
         self._save_job(job)

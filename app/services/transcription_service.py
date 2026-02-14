@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, cast
 
 import whisperx
 
@@ -78,6 +78,13 @@ class TranscriptionService:
             ) from exc
 
     @staticmethod
+    def _normalize_diarization_output(raw: Any) -> Any:
+        # WhisperX diarization may return either a DataFrame or (DataFrame, metadata).
+        if isinstance(raw, tuple) and raw:
+            return raw[0]
+        return raw
+
+    @staticmethod
     def _resolve_device(requested_device: str) -> str:
         try:
             import torch
@@ -122,7 +129,7 @@ class TranscriptionService:
         if progress_cb:
             progress_cb(30, "transcribing", "Running speech-to-text transcription.")
         audio = whisperx.load_audio(str(audio_path))
-        result = model.transcribe(audio, batch_size=params.batch_size)
+        result: Any = model.transcribe(audio, batch_size=params.batch_size)
 
         if progress_cb:
             progress_cb(55, "aligning", "Aligning timestamps for higher accuracy.")
@@ -150,10 +157,11 @@ class TranscriptionService:
                 use_auth_token=effective_hf_token,
                 device=device,
             )
-            diarize_segments = diarize_model(str(audio_path))
-            result = assign_word_speakers(diarize_segments, result)
+            diarize_raw = diarize_model(str(audio_path))
+            diarize_segments = self._normalize_diarization_output(diarize_raw)
+            result = assign_word_speakers(cast(Any, diarize_segments), cast(Any, result))
 
         if progress_cb:
             progress_cb(88, "finalizing", "Finalizing transcript output.")
 
-        return result
+        return cast(Dict[str, Any], result)
