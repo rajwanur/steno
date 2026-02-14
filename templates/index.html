@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>TranscribePro - Audio Transcription Suite</title>
+        <title>{{ app_name }} - Audio Transcription Suite</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -292,7 +292,7 @@
                         <h1
                             class="font-display font-bold text-lg tracking-tight"
                         >
-                            TranscribePro
+                            {{ app_name }}
                         </h1>
                         <p class="text-xs text-[var(--text-muted)]">
                             Audio Intelligence Suite
@@ -904,146 +904,161 @@
                     <div class="p-5 overflow-y-auto max-h-[60vh] space-y-6">
                         <div>
                             <h3 class="font-display font-semibold text-sm mb-3">
-                                Transcription
+                                Global Defaults
                             </h3>
+                            <p class="text-xs text-[var(--text-muted)] mb-3">
+                                These values are used as defaults for each new generation. You can still override them before pressing Process.
+                            </p>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Speaker Detection</label
-                                    >
-                                    <select
-                                        id="settingsSpeakerDetection"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
-                                    >
-                                        <option>Automatic</option>
-                                        <option>Manual</option>
-                                        <option>Disabled</option>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Model</label>
+                                    <select id="settingsDefaultModel" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Language</label>
+                                    <select id="settingsDefaultLanguage" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Batch Size</label>
+                                    <input id="settingsDefaultBatchSize" type="number" min="1" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Device</label>
+                                    <select id="settingsDefaultDevice" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Default Compute Type</label>
+                                    <select id="settingsComputeType" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring">
+                                        <option value="float32">float32</option>
+                                        <option value="float16">float16</option>
+                                        <option value="int8">int8</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Punctuation</label
-                                    >
-                                    <select
-                                        id="settingsPunctuation"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
-                                    >
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">App Host (restart required)</label>
+                                    <input id="settingsAppHost" type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="0.0.0.0" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">App Port (restart required)</label>
+                                    <input id="settingsAppPort" type="number" min="1" max="65535" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="8000" />
+                                </div>
+                                <label class="col-span-2 flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2">
+                                    <span class="text-sm text-[var(--text-secondary)]">App Reload (restart required)</span>
+                                    <input id="settingsAppReload" type="checkbox" class="w-4 h-4" />
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-semibold text-sm mb-3">
+                                LLM & Diarization
+                            </h3>
+                            <p class="text-xs text-[var(--text-muted)] mb-3">
+                                Added from .env defaults. These are used globally by summary generation and diarization.
+                            </p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="col-span-2">
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">LLM API Base</label>
+                                    <input id="settingsLlmApiBase" type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="https://..." />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">LLM API Key</label>
+                                    <input id="settingsLlmApiKey" type="password" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="api key" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">LLM Model</label>
+                                    <input id="settingsLlmModel" type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="gpt-4o-mini" />
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">HF Token (for diarization)</label>
+                                    <input id="settingsHfToken" type="password" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring" placeholder="hf_..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-semibold text-sm mb-3">
+                                Upcoming / Candidate Cleanup
+                            </h3>
+                            <div class="space-y-2 text-xs text-[var(--text-muted)]">
+                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">Upcoming: per-generation summary temperature, max tokens, custom prompt, confidence scores, and integration exporters.</div>
+                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">Candidate deletion: punctuation manual review mode and duplicate speaker-detection selectors (diarization remains canonical).</div>
+                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">Server startup settings (`APP_HOST`, `APP_PORT`, `APP_RELOAD`) remain deployment-level and are not applied live from UI.</div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mt-4 opacity-70">
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Speaker Detection (candidate deprecation)</label>
+                                    <select id="settingsSpeakerDetection" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
                                         <option>Automatic</option>
-                                        <option>Manual Review</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Profanity Filter</label
-                                    >
-                                    <select
-                                        id="settingsProfanity"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
-                                    >
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Punctuation (candidate deprecation)</label>
+                                    <select id="settingsPunctuation" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
+                                        <option>Automatic</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Profanity Filter (upcoming)</label>
+                                    <select id="settingsProfanity" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
                                         <option>Enabled</option>
-                                        <option>Disabled</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Output Format</label
-                                    >
-                                    <select
-                                        id="settingsOutputFormat"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
-                                    >
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Output Format Preset (upcoming)</label>
+                                    <select id="settingsOutputFormat" disabled class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm">
                                         <option>Plain Text</option>
-                                        <option>SRT Subtitles</option>
-                                        <option>JSON</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Summary Model (upcoming per-job override)</label>
+                                    <input id="settingsSummaryModel" disabled type="text" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm" value="Uses global LLM model" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Temperature (upcoming)</label>
+                                    <input id="settingsTemperature" disabled type="range" min="0" max="100" value="20" class="w-full" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Max Tokens (upcoming)</label>
+                                    <input id="settingsMaxTokens" disabled type="number" value="1024" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-[var(--text-muted)] mb-1.5">Custom Prompt (upcoming)</label>
+                                    <input id="settingsCustomPrompt" disabled type="text" value="Not implemented yet" class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm" />
+                                </div>
+                                <label class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed">
+                                    <span class="text-sm">Notion (upcoming)</span>
+                                    <input id="settingsNotion" disabled type="checkbox" class="w-5 h-5" />
+                                </label>
+                                <label class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed">
+                                    <span class="text-sm">Google Docs (upcoming)</span>
+                                    <input id="settingsGoogleDocs" disabled type="checkbox" class="w-5 h-5" />
+                                </label>
                             </div>
                         </div>
                         <div>
                             <h3 class="font-display font-semibold text-sm mb-3">
-                                AI Summary
+                                About
                             </h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Model</label
-                                    >
-                                    <select
-                                        id="settingsSummaryModel"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
-                                    >
-                                        <option>GPT-4 Turbo</option>
-                                        <option>GPT-4</option>
-                                        <option>Claude 3</option>
-                                    </select>
+                            <div class="space-y-2 text-sm">
+                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                                    <div class="font-medium" id="aboutName">{{ app_name }}</div>
+                                    <div class="text-xs text-[var(--text-muted)] mt-1" id="aboutDescription">
+                                        WhisperX-powered transcription and summary workspace.
+                                    </div>
                                 </div>
-                                <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Temperature</label
-                                    >
-                                    <input
-                                        id="settingsTemperature"
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        value="30"
-                                        class="w-full accent-[var(--accent)]"
-                                    />
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                                        <div class="text-[var(--text-muted)]">Version</div>
+                                        <div class="mt-1 font-medium" id="aboutVersion">0.1.0</div>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                                        <div class="text-[var(--text-muted)]">License</div>
+                                        <div class="mt-1 font-medium" id="aboutLicense">MIT</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Max Tokens</label
-                                    >
-                                    <input
-                                        id="settingsMaxTokens"
-                                        type="number"
-                                        value="1024"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
-                                    />
+                                <div class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                                    <div class="text-xs text-[var(--text-muted)] mb-2">Technologies</div>
+                                    <div id="aboutTechnologies" class="flex flex-wrap gap-1.5"></div>
                                 </div>
-                                <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Custom Prompt</label
-                                    >
-                                    <input
-                                        id="settingsCustomPrompt"
-                                        type="text"
-                                        placeholder="Optional custom instructions..."
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring placeholder:text-[var(--text-muted)]"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="font-display font-semibold text-sm mb-3">
-                                Export & Integration
-                            </h3>
-                            <div class="space-y-3">
-                                <label
-                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-pointer card-hover"
-                                    ><span class="text-sm">Notion</span
-                                    ><input
-                                        id="settingsNotion"
-                                        type="checkbox"
-                                        class="w-5 h-5 rounded border-[var(--border)] bg-[var(--bg-card)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
-                                /></label>
-                                <label
-                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-pointer card-hover"
-                                    ><span class="text-sm">Google Docs</span
-                                    ><input
-                                        id="settingsGoogleDocs"
-                                        type="checkbox"
-                                        checked
-                                        class="w-5 h-5 rounded border-[var(--border)] bg-[var(--bg-card)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-0"
-                                /></label>
                             </div>
                         </div>
                     </div>

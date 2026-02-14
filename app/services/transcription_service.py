@@ -100,6 +100,7 @@ class TranscriptionService:
         audio_path: Path,
         params: JobCreateParams,
         progress_cb: Callable[[int, str, str], None] | None = None,
+        hf_token: str | None = None,
     ) -> Dict[str, Any]:
         self._prepare_torch_checkpoint_loading()
         self._patch_torch_load()
@@ -139,13 +140,14 @@ class TranscriptionService:
         )
 
         if params.diarization:
-            if not settings.hf_token:
+            effective_hf_token = hf_token if hf_token is not None else settings.hf_token
+            if not effective_hf_token:
                 raise RuntimeError("Diarization requested but HF_TOKEN is not configured.")
             if progress_cb:
                 progress_cb(75, "diarizing", "Running speaker diarization.")
             diarization_pipeline, assign_word_speakers = self._get_diarization_components()
             diarize_model = diarization_pipeline(
-                use_auth_token=settings.hf_token,
+                use_auth_token=effective_hf_token,
                 device=device,
             )
             diarize_segments = diarize_model(str(audio_path))

@@ -15,6 +15,7 @@ from app.config import settings
 from app.schemas import JobCreateParams, JobListItem, JobState
 from app.services.export_service import ExportService
 from app.services.file_service import FileService
+from app.services.global_settings_service import GlobalSettingsService
 from app.services.summarization_service import SummarizationService
 from app.services.transcription_service import TranscriptionService
 
@@ -25,6 +26,7 @@ class JobService:
         self.transcription_service = TranscriptionService()
         self.export_service = ExportService()
         self.summarization_service = SummarizationService()
+        self.global_settings_service = GlobalSettingsService()
 
         self.jobs: Dict[str, JobState] = {}
         self.queue: asyncio.Queue[str] = asyncio.Queue()
@@ -116,6 +118,8 @@ class JobService:
         self._save_job(job)
 
         try:
+            global_settings = self.global_settings_service.get()
+
             def _progress_cb(progress: int, step: str, event: str) -> None:
                 if job.cancel_requested:
                     raise asyncio.CancelledError("Cancellation requested by user.")
@@ -130,6 +134,7 @@ class JobService:
                 Path(job.audio_path),
                 job.params,
                 _progress_cb,
+                global_settings.hf_token,
             )
 
             job.progress = 70
@@ -163,6 +168,9 @@ class JobService:
                     self.summarization_service.summarize,
                     self._transcript_for_summary(job),
                     job.params.summary_style,
+                    global_settings.llm_api_base,
+                    global_settings.llm_api_key,
+                    global_settings.llm_model,
                 )
                 job.result.summary = summary
                 job.result.summaries[job.params.summary_style] = summary
@@ -287,7 +295,15 @@ class JobService:
         self._push_event(job, f"Generating '{style}' summary.")
         self._save_job(job)
 
-        summary = await asyncio.to_thread(self.summarization_service.summarize, transcript, style)
+        global_settings = self.global_settings_service.get()
+        summary = await asyncio.to_thread(
+            self.summarization_service.summarize,
+            transcript,
+            style,
+            global_settings.llm_api_base,
+            global_settings.llm_api_key,
+            global_settings.llm_model,
+        )
         job.result.summary = summary
         job.result.summaries[style] = summary
         job.step = "done" if job.status == "completed" else job.step

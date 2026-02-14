@@ -13,6 +13,7 @@ const state = {
   jobs: [],
   audioUrl: null,
   deleteCandidateId: null,
+  globalSettings: null,
 };
 
 const refs = {
@@ -22,6 +23,23 @@ const refs = {
   closeSettingsBtnTop: el("closeSettingsBtnTop"),
   closeSettingsBtnBottom: el("closeSettingsBtnBottom"),
   saveSettingsBtn: el("saveSettingsBtn"),
+  settingsDefaultModel: el("settingsDefaultModel"),
+  settingsDefaultLanguage: el("settingsDefaultLanguage"),
+  settingsDefaultBatchSize: el("settingsDefaultBatchSize"),
+  settingsDefaultDevice: el("settingsDefaultDevice"),
+  settingsComputeType: el("settingsComputeType"),
+  settingsAppHost: el("settingsAppHost"),
+  settingsAppPort: el("settingsAppPort"),
+  settingsAppReload: el("settingsAppReload"),
+  settingsLlmApiBase: el("settingsLlmApiBase"),
+  settingsLlmApiKey: el("settingsLlmApiKey"),
+  settingsLlmModel: el("settingsLlmModel"),
+  settingsHfToken: el("settingsHfToken"),
+  aboutName: el("aboutName"),
+  aboutDescription: el("aboutDescription"),
+  aboutVersion: el("aboutVersion"),
+  aboutLicense: el("aboutLicense"),
+  aboutTechnologies: el("aboutTechnologies"),
   toggleTranscriptionSettings: el("toggleTranscriptionSettings"),
   transcriptionSettingsPanel: el("transcriptionSettingsPanel"),
   applyTranscriptionSettingsBtn: el("applyTranscriptionSettingsBtn"),
@@ -334,6 +352,108 @@ function toggleAdvancedPanel(force) {
   refs.transcriptionSettingsPanel.classList.toggle("hidden", !show);
 }
 
+function setSelectOptions(node, values, selectedValue) {
+  if (!node) return;
+  node.innerHTML = "";
+  values.forEach((value) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = value;
+    if (value === selectedValue) opt.selected = true;
+    node.appendChild(opt);
+  });
+}
+
+function syncSummaryStyleAvailability() {
+  if (!refs.summary_enabled || !refs.summary_style) return;
+  const enabled = !!refs.summary_enabled.checked;
+  refs.summary_style.disabled = !enabled;
+  refs.summary_style.classList.toggle("opacity-50", !enabled);
+  refs.summary_style.classList.toggle("cursor-not-allowed", !enabled);
+}
+
+function renderAboutInfo(about) {
+  if (!about) return;
+  if (refs.aboutName) refs.aboutName.textContent = about.name || "Steno";
+  if (refs.aboutDescription)
+    refs.aboutDescription.textContent =
+      about.description || "WhisperX-powered transcription and summary workspace.";
+  if (refs.aboutVersion) refs.aboutVersion.textContent = about.version || "0.1.0";
+  if (refs.aboutLicense) refs.aboutLicense.textContent = about.license || "MIT";
+  if (refs.aboutTechnologies) {
+    refs.aboutTechnologies.innerHTML = "";
+    const technologies = Array.isArray(about.technologies) ? about.technologies : [];
+    technologies.forEach((tech) => {
+      const chip = document.createElement("span");
+      chip.className =
+        "text-xs px-2 py-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)]";
+      chip.textContent = tech;
+      refs.aboutTechnologies.appendChild(chip);
+    });
+  }
+}
+
+function syncLanguageDefaultOptions(selectedValue) {
+  if (!refs.settingsDefaultLanguage || !refs.language) return;
+  refs.settingsDefaultLanguage.innerHTML = "";
+  [...refs.language.options].forEach((opt) => {
+    const copy = document.createElement("option");
+    copy.value = opt.value;
+    copy.textContent = opt.textContent;
+    if (opt.value === selectedValue) copy.selected = true;
+    refs.settingsDefaultLanguage.appendChild(copy);
+  });
+}
+
+function applyGlobalSettings(settings) {
+  if (!settings) return;
+  state.globalSettings = settings;
+
+  if (refs.settingsDefaultModel) refs.settingsDefaultModel.value = settings.default_model || "";
+  syncLanguageDefaultOptions(settings.default_language || refs.language.value || "en");
+  if (refs.settingsDefaultBatchSize)
+    refs.settingsDefaultBatchSize.value = settings.default_batch_size ?? 16;
+  if (refs.settingsDefaultDevice) refs.settingsDefaultDevice.value = settings.default_device || "auto";
+  if (refs.settingsComputeType) refs.settingsComputeType.value = settings.compute_type || "float32";
+  if (refs.settingsLlmApiBase) refs.settingsLlmApiBase.value = settings.llm_api_base || "";
+  if (refs.settingsLlmApiKey) refs.settingsLlmApiKey.value = settings.llm_api_key || "";
+  if (refs.settingsLlmModel) refs.settingsLlmModel.value = settings.llm_model || "";
+  if (refs.settingsHfToken) refs.settingsHfToken.value = settings.hf_token || "";
+  if (refs.settingsAppHost) refs.settingsAppHost.value = settings.app_host || "0.0.0.0";
+  if (refs.settingsAppPort) refs.settingsAppPort.value = settings.app_port ?? 8000;
+  if (refs.settingsAppReload) refs.settingsAppReload.checked = !!settings.app_reload;
+
+  refs.model_name.value = settings.default_model || refs.model_name.value;
+  refs.language.value = settings.default_language || refs.language.value;
+  refs.batch_size.value = settings.default_batch_size ?? refs.batch_size.value;
+  refs.device.value = settings.default_device || refs.device.value;
+  refs.compute_type.value = settings.compute_type || refs.compute_type.value;
+}
+
+function buildGlobalSettingsPayload() {
+  return {
+    default_model: refs.settingsDefaultModel.value || "small",
+    default_language: refs.settingsDefaultLanguage.value || "en",
+    default_batch_size: Number(refs.settingsDefaultBatchSize.value || "16"),
+    default_device: refs.settingsDefaultDevice.value || "auto",
+    compute_type: refs.settingsComputeType.value || "float32",
+    llm_api_base: (refs.settingsLlmApiBase.value || "").trim() || null,
+    llm_api_key: (refs.settingsLlmApiKey.value || "").trim() || null,
+    llm_model: (refs.settingsLlmModel.value || "").trim() || "gpt-4o-mini",
+    hf_token: (refs.settingsHfToken.value || "").trim() || null,
+    app_host: (refs.settingsAppHost.value || "").trim() || "0.0.0.0",
+    app_port: Number(refs.settingsAppPort.value || "8000"),
+    app_reload: !!refs.settingsAppReload.checked,
+  };
+}
+
+async function loadGlobalSettings() {
+  const res = await fetch("/api/settings/global");
+  if (!res.ok) throw new Error("Failed to load global settings");
+  const body = await res.json();
+  applyGlobalSettings(body);
+}
+
 function toggleRecording() {
   state.recording = !state.recording;
   const bars = document.querySelectorAll(".waveform-bar");
@@ -366,24 +486,12 @@ function toggleRecording() {
 async function loadConfig() {
   const res = await fetch("/api/config");
   const cfg = await res.json();
-
-  refs.model_name.innerHTML = "";
-  cfg.models.forEach((m) => {
-    const o = document.createElement("option");
-    o.value = m;
-    o.textContent = m;
-    if (m === cfg.defaults.model) o.selected = true;
-    refs.model_name.appendChild(o);
-  });
-
-  refs.device.innerHTML = "";
-  cfg.devices.forEach((d) => {
-    const o = document.createElement("option");
-    o.value = d;
-    o.textContent = d;
-    if (d === cfg.defaults.device) o.selected = true;
-    refs.device.appendChild(o);
-  });
+  setSelectOptions(refs.model_name, cfg.models, cfg.defaults.model);
+  setSelectOptions(refs.settingsDefaultModel, cfg.models, cfg.defaults.model);
+  setSelectOptions(refs.device, cfg.devices, cfg.defaults.device);
+  setSelectOptions(refs.settingsDefaultDevice, cfg.devices, cfg.defaults.device);
+  syncLanguageDefaultOptions(cfg.defaults.language || "en");
+  renderAboutInfo(cfg.about);
 
   refs.language.value = cfg.defaults.language || "en";
   refs.compute_type.value = cfg.defaults.compute_type;
@@ -530,6 +638,7 @@ function applyJobConfig(job) {
   refs.summary_enabled.checked = !!job.params.summary_enabled;
   refs.summary_style.value =
     job.params.summary_style || refs.summary_style.value;
+  syncSummaryStyleAvailability();
   refs.summaryType.value = job.params.summary_style || refs.summaryType.value;
   const set = new Set(job.params.output_formats || []);
   document.querySelectorAll("input[name='output_format']").forEach((i) => {
@@ -745,9 +854,25 @@ function attachEvents() {
   refs.closeSettingsBtnBottom.addEventListener("click", () =>
     toggleSettings(false),
   );
-  refs.saveSettingsBtn.addEventListener("click", () => {
-    toggleSettings(false);
-    showToast("Settings saved");
+  refs.saveSettingsBtn.addEventListener("click", async () => {
+    try {
+      const payload = buildGlobalSettingsPayload();
+      const res = await fetch("/api/settings/global", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.detail || "Failed to save global settings.");
+        return;
+      }
+      applyGlobalSettings(body);
+      toggleSettings(false);
+      showToast("Global settings saved");
+    } catch (e) {
+      setError(e.message || "Failed to save global settings.");
+    }
   });
 
   refs.deleteBackdrop.addEventListener("click", () => toggleDeleteModal(false));
@@ -765,6 +890,7 @@ function attachEvents() {
     toggleAdvancedPanel(false);
     showToast("Advanced options applied");
   });
+  refs.summary_enabled.addEventListener("change", syncSummaryStyleAvailability);
 
   refs.tabHistory.addEventListener("click", () => {
     state.currentTab = "history";
@@ -904,7 +1030,9 @@ async function init() {
     }
   });
   attachEvents();
+  syncSummaryStyleAvailability();
   await loadConfig();
+  await loadGlobalSettings();
   await refreshJobs();
 }
 

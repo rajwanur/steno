@@ -8,7 +8,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
 
-    app_name: str = "WhisprX"
+    app_name: str = "Steno"
+    app_version: str = "0.1.0"
+    app_license: str = "MIT"
+    app_description: str = "WhisperX-powered transcription and summary workspace."
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     app_reload: bool = False
@@ -46,6 +49,16 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o-mini"
 
     hf_token: str | None = None
+
+    app_technologies: List[str] = Field(
+        default_factory=lambda: [
+            "FastAPI",
+            "WhisperX",
+            "Tailwind CSS",
+            "OpenAI-compatible API",
+            "FFmpeg",
+        ]
+    )
 
 
 settings = Settings()

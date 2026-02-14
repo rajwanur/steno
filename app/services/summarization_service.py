@@ -11,9 +11,6 @@ class SummarizationService:
     _think_block_re = re.compile(r"<think\b[^>]*>.*?</think>", re.IGNORECASE | re.DOTALL)
     _think_tag_re = re.compile(r"</?think\b[^>]*>", re.IGNORECASE)
 
-    def __init__(self) -> None:
-        self.enabled = bool(settings.llm_api_base and settings.llm_api_key)
-
     @classmethod
     def _sanitize_output(cls, text: str) -> str:
         cleaned = cls._think_block_re.sub("", text or "")
@@ -21,8 +18,19 @@ class SummarizationService:
         cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
         return cleaned
 
-    def summarize(self, transcript: str, style: str) -> str:
-        if not self.enabled:
+    def summarize(
+        self,
+        transcript: str,
+        style: str,
+        llm_api_base: str | None = None,
+        llm_api_key: str | None = None,
+        llm_model: str | None = None,
+    ) -> str:
+        api_base = llm_api_base if llm_api_base is not None else settings.llm_api_base
+        api_key = llm_api_key if llm_api_key is not None else settings.llm_api_key
+        model = llm_model if llm_model is not None else settings.llm_model
+
+        if not api_base or not api_key:
             raise RuntimeError("Summary requested but LLM API is not configured.")
 
         style_prompt = {
@@ -32,10 +40,10 @@ class SummarizationService:
             "action_items": "Extract clear action items with owners if mentioned and deadlines if present.",
         }.get(style, "Give a concise summary.")
 
-        client = OpenAI(base_url=settings.llm_api_base, api_key=settings.llm_api_key)
+        client = OpenAI(base_url=api_base, api_key=api_key)
 
         resp = client.chat.completions.create(
-            model=settings.llm_model,
+            model=model,
             temperature=0.2,
             messages=[
                 {

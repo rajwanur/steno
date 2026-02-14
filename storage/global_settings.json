@@ -1,0 +1,14 @@
+{
+  "default_model": "large-v2",
+  "default_language": "en",
+  "default_batch_size": 16,
+  "default_device": "auto",
+  "compute_type": "float32",
+  "llm_api_base": "",
+  "llm_api_key": "",
+  "llm_model": "",
+  "hf_token": "",
+  "app_host": "0.0.0.0",
+  "app_port": 8000,
+  "app_reload": false
+}

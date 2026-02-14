@@ -87,3 +87,33 @@ class JobListItem(BaseModel):
     error: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+
+class GlobalSettings(BaseModel):
+    default_model: str = "small"
+    default_language: Optional[str] = "en"
+    default_batch_size: int = 16
+    default_device: str = "auto"
+    compute_type: str = "float32"
+    llm_api_base: Optional[str] = None
+    llm_api_key: Optional[str] = None
+    llm_model: str = "gpt-4o-mini"
+    hf_token: Optional[str] = None
+    app_host: str = "0.0.0.0"
+    app_port: int = 8000
+    app_reload: bool = False
+
+
+class GlobalSettingsUpdate(BaseModel):
+    default_model: Optional[str] = None
+    default_language: Optional[str] = None
+    default_batch_size: Optional[int] = None
+    default_device: Optional[str] = None
+    compute_type: Optional[str] = None
+    llm_api_base: Optional[str] = None
+    llm_api_key: Optional[str] = None
+    llm_model: Optional[str] = None
+    hf_token: Optional[str] = None
+    app_host: Optional[str] = None
+    app_port: Optional[int] = None
+    app_reload: Optional[bool] = None

@@ -9,6 +9,8 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
 from app.config import settings
 from app.schemas import (
+    GlobalSettings,
+    GlobalSettingsUpdate,
     JobCreateParams,
     JobCreateResponse,
     JobListItem,
@@ -29,28 +31,50 @@ def get_job_service() -> JobService:
 
 @router.get("/config")
 def get_config() -> dict:
+    service = get_job_service()
+    global_settings = service.global_settings_service.get()
     return {
         "models": settings.whisperx_models,
         "formats": settings.supported_output_formats,
         "devices": ["auto", "cpu", "cuda"],
+        "about": {
+            "name": settings.app_name,
+            "version": settings.app_version,
+            "license": settings.app_license,
+            "description": settings.app_description,
+            "technologies": settings.app_technologies,
+        },
         "defaults": {
-            "model": settings.default_model,
-            "language": settings.default_language,
-            "batch_size": settings.default_batch_size,
-            "device": settings.default_device,
-            "compute_type": settings.compute_type,
+            "model": global_settings.default_model,
+            "language": global_settings.default_language,
+            "batch_size": global_settings.default_batch_size,
+            "device": global_settings.default_device,
+            "compute_type": global_settings.compute_type,
         },
     }
+
+
+@router.get("/settings/global", response_model=GlobalSettings)
+def get_global_settings(service: JobService = Depends(get_job_service)) -> GlobalSettings:
+    return service.global_settings_service.get()
+
+
+@router.put("/settings/global", response_model=GlobalSettings)
+def update_global_settings(
+    payload: GlobalSettingsUpdate,
+    service: JobService = Depends(get_job_service),
+) -> GlobalSettings:
+    return service.global_settings_service.update(payload)
 
 
 @router.post("/jobs", response_model=JobCreateResponse)
 async def create_job(
     file: UploadFile = File(...),
-    model_name: str = Form(settings.default_model),
-    language: str | None = Form(settings.default_language),
-    batch_size: int = Form(settings.default_batch_size),
-    device: str = Form(settings.default_device),
-    compute_type: str = Form(settings.compute_type),
+    model_name: str | None = Form(None),
+    language: str | None = Form(None),
+    batch_size: int | None = Form(None),
+    device: str | None = Form(None),
+    compute_type: str | None = Form(None),
     diarization: bool = Form(True),
     summary_enabled: bool = Form(False),
     summary_style: str = Form("short"),
@@ -66,12 +90,14 @@ async def create_job(
     if unknown:
         raise HTTPException(status_code=400, detail=f"Unsupported format(s): {unknown}")
 
+    global_settings = service.global_settings_service.get()
+
     params = JobCreateParams(
-        model_name=model_name,
-        language=language,
-        batch_size=batch_size,
-        device=device,
-        compute_type=compute_type,
+        model_name=model_name or global_settings.default_model,
+        language=language if language is not None else global_settings.default_language,
+        batch_size=batch_size if batch_size is not None else global_settings.default_batch_size,
+        device=device or global_settings.default_device,
+        compute_type=compute_type or global_settings.compute_type,
         diarization=diarization,
         summary_enabled=summary_enabled,
         summary_style=summary_style,
