@@ -1,93 +1,49 @@
 # Steno
 
-Steno is a FastAPI-based transcription workspace built on WhisperX. It supports audio/video upload, alignment, optional diarization, multiple export formats, and AI summary generation through an OpenAI-compatible API.
+Steno helps you turn long recordings into useful written content. Upload a meeting, interview, lecture, or call recording, and it produces a transcript, optional speaker labels, and shareable summaries so you can review key points quickly without replaying the full audio.
+
+For developers, Steno is a FastAPI + WhisperX transcription workspace with queued background processing, multi-format exports, and OpenAI-compatible summary generation.
 
 ## Screenshot
 
 ![Steno application screenshot](static/app_interface.png)
 
-## Current Status
+## Features
 
-- Active and usable for local/self-hosted deployment.
-- UI supports:
-  - per-generation overrides before processing
-  - persisted global defaults in the Settings modal
-  - summary generation/regeneration
-  - direct summary export as Markdown (`.md`)
-- Job history is persisted on disk and reloads across restarts.
-
-## Key Features
-
-- Upload audio/video files (`mp3`, `wav`, `m4a`, `mp4`, `mov`, `mkv`, etc.)
-- Auto-detect media type and convert video to MP3 via FFmpeg
-- WhisperX transcription + timestamp alignment
-- Optional speaker diarization (requires Hugging Face token)
-- Output export formats: `txt`, `srt`, `vtt`, `tsv`, `json`
-- Optional AI summaries: `short`, `detailed`, `bullet`, `action_items`
-- Async queue-based background processing
-- In-UI job history, progress, logs, and output preview
+- Upload audio or video files (`mp3`, `wav`, `m4a`, `mp4`, `mov`, `mkv`, and more)
+- Automatic media handling (video to audio via FFmpeg)
+- WhisperX transcription with timestamp alignment
+- Optional speaker diarization (Hugging Face token required)
+- Export outputs as `txt`, `srt`, `vtt`, `tsv`, `json`
+- Generate or regenerate AI summaries (`short`, `detailed`, `bullet`, `action_items`)
+- Queue-based processing with persisted job history
 - Global settings persisted in `storage/global_settings.json`
 
-## Tech Stack
+## Installation (Local)
 
-- Python 3.11+
-- FastAPI + Uvicorn
-- WhisperX
-- OpenAI Python SDK (OpenAI-compatible endpoints)
-- Jinja2 + Tailwind CSS
-- FFmpeg
-
-## Project Structure
-
-```text
-.
-├── app
-│   ├── api
-│   │   └── routes.py
-│   ├── core
-│   │   └── logging.py
-│   ├── services
-│   │   ├── export_service.py
-│   │   ├── file_service.py
-│   │   ├── global_settings_service.py
-│   │   ├── job_service.py
-│   │   ├── summarization_service.py
-│   │   └── transcription_service.py
-│   ├── utils
-│   │   └── media.py
-│   ├── config.py
-│   ├── main.py
-│   └── schemas.py
-├── static
-│   ├── app.js
-│   └── styles.css
-├── templates
-│   └── index.html
-├── storage
-│   ├── jobs
-│   └── uploads
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
-```
-
-## Installation
+This follows the original repository setup flow (install prerequisites, install deps, configure environment, run app), updated to use `uv`.
 
 ### 1. Prerequisites
 
 - Python 3.11+
-- FFmpeg available on PATH
+- FFmpeg available on `PATH`
 - Git
-- Recommended: `uv`
+- `uv` package manager
 
-Install `uv` (if missing):
+Install `uv` if needed:
 
 ```bash
 pip install uv
 ```
 
-### 2. Create and Activate Virtual Environment
+### 2. Clone and enter project
+
+```bash
+git clone https://github.com/rajwanur/steno.git
+cd steno
+```
+
+### 3. Create and activate virtual environment
 
 ```bash
 uv venv .venv
@@ -105,82 +61,124 @@ macOS/Linux:
 source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+### 4. Install dependencies
 
 ```bash
 uv pip install -r requirements.txt
 ```
 
-### 4. Configure Environment
+### 5. Create environment file
 
 ```bash
 cp .env.example .env
 ```
 
-Set at least the values you need:
+At minimum, configure only what you need:
 
-- `HF_TOKEN` (required only if diarization is enabled)
-- `LLM_API_BASE`, `LLM_API_KEY`, `LLM_MODEL` (required only if summaries are enabled)
+- `HF_TOKEN` only if diarization is enabled
+- `LLM_API_BASE`, `LLM_API_KEY`, `LLM_MODEL` only if AI summaries are enabled
 
-### 5. Run
+## Run
+
+Development (auto-reload):
 
 ```bash
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+Non-development / regular runtime:
+
+```bash
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
 Open `http://localhost:8000`.
 
-## Configuration Reference (`.env`)
+## Configuration: `.env` vs Settings
 
-| Variable | Purpose | Required |
-|---|---|---|
-| `APP_HOST` | Uvicorn host bind | No |
-| `APP_PORT` | Uvicorn port | No |
-| `APP_RELOAD` | Auto reload in dev | No |
-| `DEFAULT_MODEL` | Default WhisperX model | No |
-| `DEFAULT_LANGUAGE` | Default language code | No |
-| `DEFAULT_BATCH_SIZE` | Default batch size | No |
-| `DEFAULT_DEVICE` | `auto`, `cpu`, `cuda` | No |
-| `COMPUTE_TYPE` | `float32`, `float16`, `int8` | No |
-| `HF_TOKEN` | Hugging Face auth for diarization | If diarization enabled |
-| `LLM_API_BASE` | OpenAI-compatible base URL | If summaries enabled |
-| `LLM_API_KEY` | LLM API key | If summaries enabled |
-| `LLM_MODEL` | Model name for summaries | If summaries enabled |
+Steno now stores most day-to-day configuration in persisted settings, not only in `.env`.
 
-Note: many defaults can also be managed from the UI Settings modal. UI values are persisted to `storage/global_settings.json`.
+- `.env` provides startup defaults.
+- Runtime defaults are managed from the UI Settings modal and saved to `storage/global_settings.json`.
+- Settings are exposed via API:
+  - `GET /api/settings/global`
+  - `PUT /api/settings/global`
+
+Common settings now managed in persisted Settings:
+
+- Transcription defaults: model, language, batch size, device, compute type
+- LLM setup: API base URL, API key, model
+- Diarization token: `hf_token`
+- Retention behavior: source files, processed audio, export files
+- App runtime values: host, port, reload
+- Summary prompt templates
+
+## API Endpoints
+
+### Configuration
+
+- `GET /api/config`  
+  Returns available models/formats, app metadata, and effective defaults.
+- `GET /api/settings/global`
+- `PUT /api/settings/global`
+
+### Jobs
+
+- `POST /api/jobs`  
+  Multipart upload with form fields such as `model_name`, `language`, `batch_size`, `device`, `compute_type`, `diarization`, `summary_enabled`, `summary_style`, and `output_formats` (JSON array string).
+- `GET /api/jobs`
+- `GET /api/jobs/{job_id}`
+- `POST /api/jobs/{job_id}/cancel`
+- `DELETE /api/jobs/{job_id}`  
+  Requires query params: `confirm=true` and `confirm_text=<exact filename>`.
+
+### Output and Summaries
+
+- `GET /api/jobs/{job_id}/output/{fmt}` (preview)
+- `GET /api/jobs/{job_id}/download/{fmt}` (download transcript/export file)
+- `POST /api/jobs/{job_id}/summary` (regenerate summary)
+- `GET /api/jobs/{job_id}/summary/export` (download summary as Markdown)
+
+### Queue
+
+- `POST /api/queue/clear`  
+  Optional query param: `include_active` (default: `true`).
 
 ## Docker
-
-Build and run:
 
 ```bash
 docker compose up --build
 ```
 
-The service is exposed at `http://localhost:8000` and persists data to `./storage`.
+Service URL: `http://localhost:8000`  
+Data persists in `./storage`.
 
-## API Endpoints
+## Project Structure
 
-- `GET /api/config`
-- `GET /api/settings/global`
-- `PUT /api/settings/global`
-- `POST /api/jobs`
-- `GET /api/jobs`
-- `GET /api/jobs/{job_id}`
-- `GET /api/jobs/{job_id}/output/{fmt}`
-- `GET /api/jobs/{job_id}/download/{fmt}`
-- `GET /api/jobs/{job_id}/summary/export` (download AI summary as `.md`)
-- `POST /api/jobs/{job_id}/summary`
-- `POST /api/jobs/{job_id}/cancel`
-- `POST /api/queue/clear`
-- `DELETE /api/jobs/{job_id}`
+```text
+.
+├── app
+│   ├── api
+│   ├── core
+│   ├── services
+│   ├── utils
+│   ├── config.py
+│   ├── main.py
+│   └── schemas.py
+├── static
+├── templates
+├── storage
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
 
 ## Operational Notes
 
-- Prefer `device=auto` unless your GPU runtime is validated.
-- On many Windows AMD setups, CPU is the most stable option.
-- Diarization may fail without a valid HF token or model access.
-- `torchaudio` deprecation warnings can appear in logs; they are warnings and do not necessarily indicate job failure.
+- `device=auto` is a safe default for most environments.
+- On many Windows AMD setups, CPU mode can be more stable.
+- Diarization requires a valid Hugging Face token with model access.
 
 ## License
 
