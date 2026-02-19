@@ -265,14 +265,14 @@
             }
         </style>
     </head>
-    <body class="min-h-screen bg-pattern overflow-hidden">
-        <div class="h-screen flex flex-col">
+    <body class="min-h-screen lg:h-screen bg-pattern overflow-x-hidden lg:overflow-hidden">
+        <div class="min-h-screen lg:h-screen flex flex-col">
             <header
-                class="relative z-40 flex-shrink-0 h-16 border-b border-[var(--border-subtle)] px-6 flex items-center justify-between animate-in"
+                class="sticky top-0 relative z-40 flex-shrink-0 h-16 border-b border-[var(--border-subtle)] px-4 md:px-5 flex items-center justify-between animate-in bg-[var(--bg-primary)]/95 backdrop-blur-sm"
             >
                 <div class="flex items-center gap-3">
                     <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[#d4922a] flex items-center justify-center"
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[#d4922a] flex items-center justify-center"
                     >
                         <svg
                             class="w-6 h-6 text-[var(--bg-primary)]"
@@ -300,8 +300,8 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <div class="hidden md:flex items-center gap-6 text-sm">
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:flex items-center gap-4 text-sm">
                         <div class="flex items-center gap-2">
                             <span
                                 class="w-2 h-2 rounded-full bg-[var(--success)]"
@@ -324,7 +324,7 @@
                     <button
                         id="openSettingsBtn"
                         type="button"
-                        class="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
+                        class="w-10 h-10 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
                         aria-label="Open settings"
                     >
                         <svg
@@ -352,7 +352,7 @@
                         <button
                             id="themeMenuBtn"
                             type="button"
-                            class="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
+                            class="w-10 h-10 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
                             aria-label="Theme options"
                         >
                             <svg
@@ -372,26 +372,26 @@
                         </button>
                         <div
                             id="themeMenu"
-                            class="hidden absolute right-0 mt-2 w-40 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-2 z-[120] shadow-xl"
+                            class="hidden absolute right-0 mt-2 w-40 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 z-[120] shadow-xl"
                         >
                             <button
                                 id="themeLightBtn"
                                 type="button"
-                                class="w-full text-left text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
+                                class="w-full text-left text-sm px-2 py-1.5 rounded-md hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
                             >
                                 Light
                             </button>
                             <button
                                 id="themeDarkBtn"
                                 type="button"
-                                class="w-full text-left text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
+                                class="w-full text-left text-sm px-2 py-1.5 rounded-md hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
                             >
                                 Dark
                             </button>
                             <button
                                 id="themeSystemBtn"
                                 type="button"
-                                class="w-full text-left text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
+                                class="w-full text-left text-sm px-2 py-1.5 rounded-md hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
                             >
                                 System
                             </button>
@@ -400,13 +400,15 @@
                 </div>
             </header>
 
-            <main class="flex-1 flex overflow-hidden">
+            <main
+                class="flex-1 min-h-0 flex flex-col lg:flex-row overflow-x-hidden overflow-y-auto lg:overflow-hidden"
+            >
                 <aside
-                    class="w-80 flex-shrink-0 border-r border-[var(--border-subtle)] flex flex-col animate-in stagger-1"
+                    class="w-full lg:w-72 xl:w-80 flex-shrink-0 min-h-0 border-b lg:border-b-0 lg:border-r border-[var(--border-subtle)] flex flex-col animate-in stagger-1"
                 >
-                    <div class="p-4 border-b border-[var(--border-subtle)]">
+                    <div class="p-3 border-b border-[var(--border-subtle)]">
                         <div
-                            class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-4"
+                            class="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3"
                         >
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="font-display font-semibold text-sm">
@@ -421,7 +423,7 @@
 
                             <div
                                 id="waveformContainer"
-                                class="h-16 bg-[var(--bg-secondary)] rounded-xl mb-4 flex items-center justify-center gap-1 px-4 overflow-hidden"
+                                class="h-16 bg-[var(--bg-secondary)] rounded-lg mb-4 flex items-center justify-center gap-1 px-4 overflow-hidden"
                             >
                                 <div
                                     class="flex items-center gap-[3px] h-full py-3"
@@ -530,20 +532,20 @@
                     </div>
 
                     <div
-                        class="flex-1 overflow-y-auto p-3 space-y-2"
+                        class="flex-1 overflow-y-auto p-2 space-y-2"
                         id="sidebarContent"
                     ></div>
                 </aside>
 
                 <section
-                    class="flex-1 flex flex-col overflow-hidden animate-in stagger-2"
+                    class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden animate-in stagger-2"
                 >
-                    <div class="p-4 border-b border-[var(--border-subtle)]">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
+                    <div class="p-3 border-b border-[var(--border-subtle)]">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <select
                                     id="language"
-                                    class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
+                                    class="w-full sm:w-auto bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
                                 >
                                     <option value="en">English (US)</option>
                                     <option value="en-GB">English (UK)</option>
@@ -557,12 +559,12 @@
                                 </select>
                                 <select
                                     id="model_name"
-                                    class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
+                                    class="w-full sm:w-auto bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
                                 ></select>
                                 <button
                                     id="toggleTranscriptionSettings"
                                     type="button"
-                                    class="flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
+                                    class="w-full sm:w-auto flex items-center justify-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
                                 >
                                     <svg
                                         class="w-4 h-4"
@@ -582,7 +584,7 @@
                                 <button
                                     id="toggleSpeakerNamesBtn"
                                     type="button"
-                                    class="flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                                    class="w-full sm:w-auto flex items-center justify-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled
                                 >
                                     <svg
@@ -601,18 +603,20 @@
                                     Speaker Names
                                 </button>
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div
+                                class="sticky bottom-0 z-20 w-full sm:w-auto flex items-center gap-2 bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded-lg border border-[var(--border-subtle)] p-1 sm:static sm:bg-transparent sm:border-0 sm:p-0"
+                            >
                                 <div class="relative">
                                     <button
                                         id="exportBtn"
                                         type="button"
-                                        class="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
+                                        class="px-3 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring btn-hover"
                                     >
                                         Export
                                     </button>
                                     <div
                                         id="exportMenu"
-                                        class="hidden absolute right-0 mt-2 w-52 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-3 z-20"
+                                        class="hidden absolute right-0 mt-2 w-52 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 z-20"
                                     >
                                         <label
                                             class="block text-xs text-[var(--text-muted)] mb-1.5"
@@ -621,12 +625,12 @@
                                         >
                                         <select
                                             id="exportFormat"
-                                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring mb-2"
+                                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring mb-2"
                                         ></select>
                                         <button
                                             id="confirmExportBtn"
                                             type="button"
-                                            class="w-full px-3 py-2 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all"
+                                            class="w-full px-3 py-2 rounded-lg bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all"
                                         >
                                             Download
                                         </button>
@@ -635,7 +639,7 @@
                                 <button
                                     id="startProcessBtn"
                                     type="button"
-                                    class="px-4 py-2.5 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                                    class="px-3 py-2 rounded-lg bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
                                 >
                                     Process
                                 </button>
@@ -643,7 +647,7 @@
                         </div>
                         <div
                             id="speakerNamePanel"
-                            class="hidden mt-3 border border-[var(--border-subtle)] rounded-xl bg-[var(--bg-secondary)] p-3"
+                            class="hidden mt-3 border border-[var(--border-subtle)] rounded-lg bg-[var(--bg-secondary)] p-2"
                         >
                             <div class="flex items-center justify-between mb-2">
                                 <h4
@@ -675,12 +679,12 @@
                             <div id="speakerLegendList" class="space-y-2"></div>
                         </div>
                     </div>
-                    <div class="flex-1 flex overflow-hidden">
+                    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                         <div
-                            class="flex-1 flex flex-col border-r border-[var(--border-subtle)]"
+                            class="flex-1 min-h-0 flex flex-col border-b md:border-b-0 md:border-r border-[var(--border-subtle)]"
                         >
                             <div
-                                class="flex items-center justify-between p-3 border-b border-[var(--border-subtle)]"
+                                class="flex items-center justify-between p-2 border-b border-[var(--border-subtle)]"
                             >
                                 <h3 class="font-display font-semibold text-sm">
                                     Transcription Output
@@ -744,7 +748,7 @@
                                     class="text-xs text-[var(--error)] mt-1"
                                 ></p>
                             </div>
-                            <div class="flex-1 p-4 overflow-y-auto">
+                            <div class="flex-1 p-3 overflow-y-auto">
                                 <div
                                     id="transcriptionOutput"
                                     class="text-[var(--text-secondary)] leading-relaxed text-sm whitespace-pre-wrap"
@@ -760,16 +764,16 @@
                         </div>
 
                         <div
-                            class="w-80 flex-shrink-0 flex flex-col bg-[var(--bg-secondary)]"
+                            class="w-full md:w-72 xl:w-80 flex-shrink-0 min-h-0 flex flex-col bg-[var(--bg-secondary)]"
                         >
                             <div
-                                class="flex items-center justify-between p-3 border-b border-[var(--border-subtle)]"
+                                class="flex items-center justify-between p-2 border-b border-[var(--border-subtle)]"
                             >
                                 <h3 class="font-display font-semibold text-sm">
                                     Log
                                 </h3>
                             </div>
-                            <div class="flex-1 p-4 overflow-y-auto">
+                            <div class="flex-1 p-3 overflow-y-auto">
                                 <div
                                     id="previewContent"
                                     class="text-xs text-[var(--text-secondary)] leading-relaxed space-y-2"
@@ -780,9 +784,9 @@
                 </section>
 
                 <aside
-                    class="w-96 flex-shrink-0 flex flex-col border-l border-[var(--border-subtle)] animate-in stagger-3 relative z-10"
+                    class="w-full lg:w-80 xl:w-96 flex-shrink-0 min-h-0 flex flex-col border-t lg:border-t-0 lg:border-l border-[var(--border-subtle)] animate-in stagger-3 relative z-10"
                 >
-                    <div class="p-4 border-b border-[var(--border-subtle)]">
+                    <div class="p-3 border-b border-[var(--border-subtle)]">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-display font-semibold">
                                 AI Summary
@@ -812,7 +816,7 @@
                         <div class="space-y-3">
                             <select
                                 id="summaryType"
-                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
+                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
                             ></select>
 
                             <div class="flex gap-2">
@@ -853,14 +857,14 @@
                                 <button
                                     id="summaryRenderTextBtn"
                                     type="button"
-                                    class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-subtle)]"
+                                    class="px-2.5 py-1.5 rounded-md text-xs bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-subtle)]"
                                 >
                                     Text
                                 </button>
                                 <button
                                     id="summaryRenderMarkdownBtn"
                                     type="button"
-                                    class="px-2.5 py-1.5 rounded-lg text-xs text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]"
+                                    class="px-2.5 py-1.5 rounded-md text-xs text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]"
                                 >
                                     Markdown
                                 </button>
@@ -885,13 +889,13 @@
                                 <textarea
                                     id="summaryPromptPreview"
                                     readonly
-                                    class="w-full min-h-[84px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-secondary)]"
+                                    class="w-full min-h-[84px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs text-[var(--text-secondary)]"
                                 ></textarea>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex-1 p-4 overflow-y-auto">
+                    <div class="flex-1 p-3 overflow-y-auto">
                         <div id="summaryOutput" class="space-y-4">
                             <div
                                 class="text-[var(--text-muted)] italic text-sm"
@@ -904,13 +908,13 @@
 
                     <div
                         id="summaryActions"
-                        class="p-4 border-t border-[var(--border-subtle)]"
+                        class="p-3 border-t border-[var(--border-subtle)] sticky bottom-0 bg-[var(--bg-primary)]/90 backdrop-blur-sm"
                     >
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <button
                                 id="regenerateSummaryBtn"
                                 type="button"
-                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
+                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
                             >
                                 <svg
                                     class="w-4 h-4"
@@ -930,7 +934,7 @@
                             <button
                                 id="generateSummaryBtn"
                                 type="button"
-                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
                             >
                                 <svg
                                     class="w-4 h-4"
@@ -950,7 +954,7 @@
                             <button
                                 id="downloadSummaryBtn"
                                 type="button"
-                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
+                                class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-all focus-ring"
                             >
                                 <svg
                                     class="w-4 h-4"
@@ -978,19 +982,19 @@
                 id="settingsBackdrop"
             ></div>
             <div
-                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] overflow-hidden"
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-1rem)] max-w-2xl max-h-[85vh] overflow-hidden"
             >
                 <div
-                    class="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl"
+                    class="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl"
                 >
                     <div
-                        class="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]"
+                        class="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]"
                     >
                         <h2 class="font-display font-bold text-xl">Settings</h2>
                         <button
                             id="closeSettingsBtnTop"
                             type="button"
-                            class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all focus-ring"
+                            class="w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all focus-ring"
                             aria-label="Close settings"
                         >
                             <svg
@@ -1008,7 +1012,7 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="p-5 overflow-y-auto max-h-[60vh] space-y-4">
+                    <div class="p-4 overflow-y-auto max-h-[70vh] space-y-4">
                         <div
                             id="settingsTabBar"
                             class="flex flex-wrap gap-2 pb-2 border-b border-[var(--border-subtle)]"
@@ -1016,42 +1020,42 @@
                             <button
                                 type="button"
                                 data-settings-tab-btn="general"
-                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                                class="px-3 py-1.5 rounded-md text-xs border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)]"
                             >
                                 General
                             </button>
                             <button
                                 type="button"
                                 data-settings-tab-btn="llm"
-                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                                class="px-3 py-1.5 rounded-md text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
                             >
                                 LLM
                             </button>
                             <button
                                 type="button"
                                 data-settings-tab-btn="summary"
-                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                                class="px-3 py-1.5 rounded-md text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
                             >
                                 Summary
                             </button>
                             <button
                                 type="button"
                                 data-settings-tab-btn="storage"
-                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                                class="px-3 py-1.5 rounded-md text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
                             >
                                 Storage
                             </button>
                             <button
                                 type="button"
                                 data-settings-tab-btn="advanced"
-                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                                class="px-3 py-1.5 rounded-md text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
                             >
                                 Advanced
                             </button>
                             <button
                                 type="button"
                                 data-settings-tab-btn="about"
-                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                                class="px-3 py-1.5 rounded-md text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
                             >
                                 About
                             </button>
@@ -1065,7 +1069,7 @@
                                 generation. You can still override them before
                                 pressing Process.
                             </p>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label
                                         class="block text-xs text-[var(--text-muted)] mb-1.5"
@@ -1073,7 +1077,7 @@
                                     >
                                     <select
                                         id="settingsDefaultModel"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                     ></select>
                                 </div>
                                 <div>
@@ -1083,7 +1087,7 @@
                                     >
                                     <select
                                         id="settingsDefaultLanguage"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                     ></select>
                                 </div>
                                 <div>
@@ -1095,7 +1099,7 @@
                                         id="settingsDefaultBatchSize"
                                         type="number"
                                         min="1"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                     />
                                 </div>
                                 <div>
@@ -1105,7 +1109,7 @@
                                     >
                                     <select
                                         id="settingsDefaultDevice"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                     ></select>
                                 </div>
                                 <div>
@@ -1115,7 +1119,7 @@
                                     >
                                     <select
                                         id="settingsComputeType"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                     >
                                         <option value="float32">float32</option>
                                         <option value="float16">float16</option>
@@ -1130,7 +1134,7 @@
                                     <input
                                         id="settingsAppHost"
                                         type="text"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                         placeholder="0.0.0.0"
                                     />
                                 </div>
@@ -1144,12 +1148,12 @@
                                         type="number"
                                         min="1"
                                         max="65535"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                         placeholder="8000"
                                     />
                                 </div>
                                 <label
-                                    class="col-span-2 flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2"
+                                    class="col-span-2 flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2"
                                 >
                                     <span
                                         class="text-sm text-[var(--text-secondary)]"
@@ -1171,7 +1175,7 @@
                                 Added from .env defaults. These are used
                                 globally by summary generation and diarization.
                             </p>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div class="col-span-2">
                                     <label
                                         class="block text-xs text-[var(--text-muted)] mb-1.5"
@@ -1180,7 +1184,7 @@
                                     <input
                                         id="settingsLlmApiBase"
                                         type="text"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                         placeholder="https://..."
                                     />
                                 </div>
@@ -1192,7 +1196,7 @@
                                     <input
                                         id="settingsLlmApiKey"
                                         type="password"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                         placeholder="api key"
                                     />
                                 </div>
@@ -1204,7 +1208,7 @@
                                     <input
                                         id="settingsLlmModel"
                                         type="text"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                         placeholder="gpt-4o-mini"
                                     />
                                 </div>
@@ -1216,7 +1220,7 @@
                                     <input
                                         id="settingsHfToken"
                                         type="password"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                         placeholder="hf_..."
                                     />
                                 </div>
@@ -1231,7 +1235,7 @@
                                 new options to make them available everywhere.
                             </p>
                             <div class="space-y-3">
-                                <div class="grid grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
                                         <label
                                             for="settingsSummaryPromptStyle"
@@ -1240,21 +1244,21 @@
                                         >
                                         <select
                                             id="settingsSummaryPromptStyle"
-                                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                         ></select>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-2 items-end">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
                                         <button
                                             id="settingsSummaryPromptReset"
                                             type="button"
-                                            class="w-full px-3 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]"
+                                            class="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]"
                                         >
                                             Reset
                                         </button>
                                         <button
                                             id="settingsDeleteSummaryOptionBtn"
                                             type="button"
-                                            class="w-full px-3 py-2 rounded-xl bg-red-600 text-xs text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            class="w-full px-3 py-2 rounded-lg bg-red-600 text-xs text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             Delete
                                         </button>
@@ -1269,18 +1273,18 @@
                                     <textarea
                                         id="settingsSummaryPromptText"
                                         rows="4"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                     ></textarea>
                                 </div>
                                 <div
-                                    class="border border-[var(--border-subtle)] rounded-xl p-3 bg-[var(--bg-secondary)]"
+                                    class="border border-[var(--border-subtle)] rounded-lg p-2 bg-[var(--bg-secondary)]"
                                 >
                                     <div
                                         class="text-xs text-[var(--text-muted)] mb-2"
                                     >
                                         Add New Summary Option
                                     </div>
-                                    <div class="grid grid-cols-2 gap-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         <div>
                                             <label
                                                 for="settingsNewSummaryOptionKey"
@@ -1290,7 +1294,7 @@
                                             <input
                                                 id="settingsNewSummaryOptionKey"
                                                 type="text"
-                                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                                 placeholder="example: executive_brief"
                                             />
                                         </div>
@@ -1303,7 +1307,7 @@
                                             <textarea
                                                 id="settingsNewSummaryOptionPrompt"
                                                 rows="2"
-                                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                                                 placeholder="Prompt instruction for this new summary style"
                                             ></textarea>
                                         </div>
@@ -1311,7 +1315,7 @@
                                     <button
                                         id="settingsAddSummaryOptionBtn"
                                         type="button"
-                                        class="mt-3 px-3 py-2 rounded-xl bg-[var(--accent)] text-xs font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)]"
+                                        class="mt-3 px-3 py-2 rounded-lg bg-[var(--accent)] text-xs font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)]"
                                     >
                                         Add Summary Option
                                     </button>
@@ -1328,7 +1332,7 @@
                             </p>
                             <div class="space-y-2">
                                 <label
-                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)]"
+                                    class="flex items-center justify-between p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-subtle)]"
                                 >
                                     <span class="text-sm"
                                         >Retain source upload file</span
@@ -1340,7 +1344,7 @@
                                     />
                                 </label>
                                 <label
-                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)]"
+                                    class="flex items-center justify-between p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-subtle)]"
                                 >
                                     <span class="text-sm"
                                         >Retain processed audio file</span
@@ -1352,7 +1356,7 @@
                                     />
                                 </label>
                                 <label
-                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)]"
+                                    class="flex items-center justify-between p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-subtle)]"
                                 >
                                     <span class="text-sm"
                                         >Retain generated export files</span
@@ -1373,7 +1377,7 @@
                                 class="space-y-2 text-xs text-[var(--text-muted)]"
                             >
                                 <div
-                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                    class="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
                                 >
                                     Upcoming: per-generation summary
                                     temperature, max tokens, custom prompt,
@@ -1381,14 +1385,14 @@
                                     exporters.
                                 </div>
                                 <div
-                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                    class="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
                                 >
                                     Candidate deletion: punctuation manual
                                     review mode and duplicate speaker-detection
                                     selectors (diarization remains canonical).
                                 </div>
                                 <div
-                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                    class="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
                                 >
                                     Server startup settings (`APP_HOST`,
                                     `APP_PORT`, `APP_RELOAD`) remain
@@ -1396,7 +1400,7 @@
                                     from UI.
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 mt-4 opacity-70">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 opacity-70">
                                 <div>
                                     <label
                                         class="block text-xs text-[var(--text-muted)] mb-1.5"
@@ -1406,7 +1410,7 @@
                                     <select
                                         id="settingsSpeakerDetection"
                                         disabled
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm"
                                     >
                                         <option>Automatic</option>
                                     </select>
@@ -1420,7 +1424,7 @@
                                     <select
                                         id="settingsPunctuation"
                                         disabled
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm"
                                     >
                                         <option>Automatic</option>
                                     </select>
@@ -1433,7 +1437,7 @@
                                     <select
                                         id="settingsProfanity"
                                         disabled
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm"
                                     >
                                         <option>Enabled</option>
                                     </select>
@@ -1446,7 +1450,7 @@
                                     <select
                                         id="settingsOutputFormat"
                                         disabled
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm"
                                     >
                                         <option>Plain Text</option>
                                     </select>
@@ -1461,7 +1465,7 @@
                                         id="settingsSummaryModel"
                                         disabled
                                         type="text"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm"
                                         value="Uses global LLM model"
                                     />
                                 </div>
@@ -1490,11 +1494,11 @@
                                         disabled
                                         type="number"
                                         value="1024"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm"
                                     />
                                 </div>
                                 <label
-                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed"
+                                    class="flex items-center justify-between p-2 bg-[var(--bg-secondary)] rounded-lg cursor-not-allowed"
                                 >
                                     <span class="text-sm"
                                         >Notion (upcoming)</span
@@ -1507,7 +1511,7 @@
                                     />
                                 </label>
                                 <label
-                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl cursor-not-allowed"
+                                    class="flex items-center justify-between p-2 bg-[var(--bg-secondary)] rounded-lg cursor-not-allowed"
                                 >
                                     <span class="text-sm"
                                         >Google Docs (upcoming)</span
@@ -1527,7 +1531,7 @@
                             </h3>
                             <div class="space-y-2 text-sm">
                                 <div
-                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                    class="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
                                 >
                                     <div class="font-medium" id="aboutName">
                                         {{ app_name }}
@@ -1540,9 +1544,9 @@
                                         summary workspace.
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                                     <div
-                                        class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                        class="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
                                     >
                                         <div class="text-[var(--text-muted)]">
                                             Version
@@ -1555,7 +1559,7 @@
                                         </div>
                                     </div>
                                     <div
-                                        class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                        class="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
                                     >
                                         <div class="text-[var(--text-muted)]">
                                             License
@@ -1569,7 +1573,7 @@
                                     </div>
                                 </div>
                                 <div
-                                    class="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+                                    class="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
                                 >
                                     <div
                                         class="text-xs text-[var(--text-muted)] mb-2"
@@ -1585,19 +1589,19 @@
                         </div>
                     </div>
                     <div
-                        class="flex items-center justify-end gap-3 p-5 border-t border-[var(--border-subtle)]"
+                        class="flex items-center justify-end gap-3 p-4 border-t border-[var(--border-subtle)]"
                     >
                         <button
                             id="closeSettingsBtnBottom"
                             type="button"
-                            class="px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                            class="px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             id="saveSettingsBtn"
                             type="button"
-                            class="px-4 py-2.5 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
+                            class="px-3 py-2 rounded-lg bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring btn-hover"
                         >
                             Save Changes
                         </button>
@@ -1612,10 +1616,10 @@
                 class="absolute inset-0 bg-black/60 backdrop-blur-sm"
             ></div>
             <div
-                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md"
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-1rem)] max-w-md"
             >
                 <div
-                    class="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-5"
+                    class="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl p-4"
                 >
                     <h3 class="font-display font-semibold text-lg mb-2">
                         Delete History Item
@@ -1629,13 +1633,13 @@
                     </p>
                     <p
                         id="deleteTargetName"
-                        class="text-sm font-mono text-[var(--text-primary)] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 mb-3 break-all"
+                        class="text-sm font-mono text-[var(--text-primary)] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-md px-2 py-1 mb-3 break-all"
                     ></p>
                     <input
                         id="deleteConfirmInput"
                         type="text"
                         autocomplete="off"
-                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring mb-3"
+                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring mb-3"
                         placeholder="Enter exact filename"
                     />
                     <label
@@ -1653,14 +1657,14 @@
                         <button
                             id="deleteCancelBtn"
                             type="button"
-                            class="px-3 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            class="px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                         >
                             Cancel
                         </button>
                         <button
                             id="deleteConfirmBtn"
                             type="button"
-                            class="px-3 py-2 rounded-xl text-sm bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="px-3 py-2 rounded-lg text-sm bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled
                         >
                             Delete Permanently
@@ -1672,10 +1676,10 @@
 
         <div
             id="transcriptionSettingsPanel"
-            class="fixed top-24 left-1/2 -translate-x-1/2 z-40 hidden"
+            class="fixed top-20 left-1/2 -translate-x-1/2 z-40 hidden w-[calc(100%-1rem)] sm:w-auto"
         >
             <div
-                class="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-4 w-80"
+                class="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl p-3 w-full sm:w-80 max-h-[85vh] overflow-y-auto"
             >
                 <h4 class="font-display font-semibold text-sm mb-3">
                     Advanced Options
@@ -1731,7 +1735,7 @@
                             >Device</label
                         ><select
                             id="device"
-                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                         ></select>
                     </div>
                     <div>
@@ -1740,7 +1744,7 @@
                             >Compute Type</label
                         ><select
                             id="compute_type"
-                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                         >
                             <option value="float32">float32</option>
                             <option value="float16">float16</option>
@@ -1756,7 +1760,7 @@
                             type="number"
                             min="1"
                             value="16"
-                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                         />
                     </div>
                     <div>
@@ -1775,7 +1779,7 @@
                             >Summary Style</label
                         ><select
                             id="summary_style"
-                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
                         ></select>
                     </div>
                     <div>
@@ -1785,23 +1789,23 @@
                         >
                         <div
                             id="format-list"
-                            class="grid grid-cols-2 gap-2 text-sm"
+                            class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm"
                         ></div>
                     </div>
                 </div>
                 <button
                     id="applyTranscriptionSettingsBtn"
                     type="button"
-                    class="w-full mt-4 px-4 py-2 rounded-xl bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring"
+                    class="w-full mt-4 px-4 py-2 rounded-lg bg-[var(--accent)] text-sm font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] transition-all focus-ring"
                 >
                     Apply
                 </button>
             </div>
         </div>
 
-        <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+        <div id="toast" class="fixed bottom-4 right-4 z-50 hidden max-w-[calc(100%-1rem)]">
             <div
-                class="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-4 py-3 shadow-xl flex items-center gap-3"
+                class="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg px-4 py-3 shadow-xl flex items-center gap-3"
             >
                 <svg
                     class="w-5 h-5 text-[var(--success)]"
@@ -1825,3 +1829,5 @@
         <script src="/static/app.js"></script>
     </body>
 </html>
+
+
