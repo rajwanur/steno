@@ -15,6 +15,7 @@ const state = {
   currentTab: "history",
   previewMode: "text",
   summaryRenderMode: "text",
+  settingsTab: "general",
   recording: false,
   recordingTime: 0,
   recordingTimer: null,
@@ -46,6 +47,9 @@ const refs = {
   settingsLlmApiBase: el("settingsLlmApiBase"),
   settingsLlmApiKey: el("settingsLlmApiKey"),
   settingsLlmModel: el("settingsLlmModel"),
+  settingsRetainSourceFiles: el("settingsRetainSourceFiles"),
+  settingsRetainProcessedAudio: el("settingsRetainProcessedAudio"),
+  settingsRetainExportFiles: el("settingsRetainExportFiles"),
   settingsHfToken: el("settingsHfToken"),
   aboutName: el("aboutName"),
   aboutDescription: el("aboutDescription"),
@@ -442,6 +446,32 @@ function renderSegmentedTranscript(job, fallbackText) {
 function toggleSettings(show) {
   refs.settingsModal.classList.toggle("hidden", !show);
   document.body.style.overflow = show ? "hidden" : "";
+  if (show) {
+    setSettingsTab(state.settingsTab || "general");
+  }
+}
+
+function setSettingsTab(tabName) {
+  const buttons = refs.settingsModal.querySelectorAll("[data-settings-tab-btn]");
+  const panels = refs.settingsModal.querySelectorAll("[data-settings-tab-panel]");
+  const requested = (tabName || "").trim();
+  const exists = [...panels].some(
+    (node) => node.getAttribute("data-settings-tab-panel") === requested,
+  );
+  const activeTab = exists ? requested : "general";
+  state.settingsTab = activeTab;
+
+  panels.forEach((panel) => {
+    const isActive = panel.getAttribute("data-settings-tab-panel") === activeTab;
+    panel.classList.toggle("hidden", !isActive);
+  });
+
+  buttons.forEach((btn) => {
+    const isActive = btn.getAttribute("data-settings-tab-btn") === activeTab;
+    btn.classList.toggle("bg-[var(--bg-elevated)]", isActive);
+    btn.classList.toggle("text-[var(--text-primary)]", isActive);
+    btn.classList.toggle("text-[var(--text-secondary)]", !isActive);
+  });
 }
 
 function canDeleteJob(job) {
@@ -725,6 +755,15 @@ function applyGlobalSettings(settings) {
     refs.settingsLlmApiKey.value = settings.llm_api_key || "";
   if (refs.settingsLlmModel)
     refs.settingsLlmModel.value = settings.llm_model || "";
+  if (refs.settingsRetainSourceFiles)
+    refs.settingsRetainSourceFiles.checked =
+      settings.retain_source_files !== false;
+  if (refs.settingsRetainProcessedAudio)
+    refs.settingsRetainProcessedAudio.checked =
+      settings.retain_processed_audio !== false;
+  if (refs.settingsRetainExportFiles)
+    refs.settingsRetainExportFiles.checked =
+      settings.retain_export_files !== false;
   if (refs.settingsHfToken)
     refs.settingsHfToken.value = settings.hf_token || "";
   if (refs.settingsAppHost)
@@ -755,6 +794,9 @@ function buildGlobalSettingsPayload() {
     llm_api_base: (refs.settingsLlmApiBase.value || "").trim() || null,
     llm_api_key: (refs.settingsLlmApiKey.value || "").trim() || null,
     llm_model: (refs.settingsLlmModel.value || "").trim() || "gpt-4o-mini",
+    retain_source_files: !!refs.settingsRetainSourceFiles.checked,
+    retain_processed_audio: !!refs.settingsRetainProcessedAudio.checked,
+    retain_export_files: !!refs.settingsRetainExportFiles.checked,
     summary_prompt_templates: { ...state.summaryPromptTemplates },
     hf_token: (refs.settingsHfToken.value || "").trim() || null,
     app_host: (refs.settingsAppHost.value || "").trim() || "0.0.0.0",
@@ -1175,6 +1217,15 @@ async function copyFromNode(node, message) {
 }
 
 function attachEvents() {
+  refs.settingsModal
+    .querySelectorAll("[data-settings-tab-btn]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tabName = btn.getAttribute("data-settings-tab-btn") || "general";
+        setSettingsTab(tabName);
+      });
+    });
+
   refs.themeMenuBtn.addEventListener("click", () =>
     refs.themeMenu.classList.toggle("hidden"),
   );
@@ -1297,6 +1348,7 @@ function attachEvents() {
   if (refs.openPromptEditorBtn && refs.settingsSummaryPromptStyle) {
     refs.openPromptEditorBtn.addEventListener("click", () => {
       toggleSettings(true);
+      setSettingsTab("summary");
       const selected = normalizeSummaryStyleKey(refs.summaryType.value || "");
       syncSummaryStyleSelectors(selected || "short");
       refs.settingsSummaryPromptStyle.value =

@@ -954,8 +954,55 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="p-5 overflow-y-auto max-h-[60vh] space-y-6">
-                        <div>
+                    <div class="p-5 overflow-y-auto max-h-[60vh] space-y-4">
+                        <div
+                            id="settingsTabBar"
+                            class="flex flex-wrap gap-2 pb-2 border-b border-[var(--border-subtle)]"
+                        >
+                            <button
+                                type="button"
+                                data-settings-tab-btn="general"
+                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                            >
+                                General
+                            </button>
+                            <button
+                                type="button"
+                                data-settings-tab-btn="llm"
+                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                            >
+                                LLM
+                            </button>
+                            <button
+                                type="button"
+                                data-settings-tab-btn="summary"
+                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                            >
+                                Summary
+                            </button>
+                            <button
+                                type="button"
+                                data-settings-tab-btn="storage"
+                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                            >
+                                Storage
+                            </button>
+                            <button
+                                type="button"
+                                data-settings-tab-btn="advanced"
+                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                            >
+                                Advanced
+                            </button>
+                            <button
+                                type="button"
+                                data-settings-tab-btn="about"
+                                class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+                            >
+                                About
+                            </button>
+                        </div>
+                        <div data-settings-tab-panel="general">
                             <h3 class="font-display font-semibold text-sm mb-3">
                                 Global Defaults
                             </h3>
@@ -1062,7 +1109,7 @@
                                 </label>
                             </div>
                         </div>
-                        <div>
+                        <div data-settings-tab-panel="llm" class="hidden">
                             <h3 class="font-display font-semibold text-sm mb-3">
                                 LLM & Diarization
                             </h3>
@@ -1121,7 +1168,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div>
+                        <div data-settings-tab-panel="summary" class="hidden">
                             <h3 class="font-display font-semibold text-sm mb-3">
                                 Summary Prompt Templates
                             </h3>
@@ -1217,7 +1264,54 @@
                                 </div>
                             </div>
                         </div>
-                        <div>
+                        <div data-settings-tab-panel="storage" class="hidden">
+                            <h3 class="font-display font-semibold text-sm mb-3">
+                                Storage Retention
+                            </h3>
+                            <p class="text-xs text-[var(--text-muted)] mb-3">
+                                Choose what to keep in each task folder under
+                                storage. Changes apply to newly created tasks.
+                            </p>
+                            <div class="space-y-2">
+                                <label
+                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)]"
+                                >
+                                    <span class="text-sm"
+                                        >Retain source upload file</span
+                                    >
+                                    <input
+                                        id="settingsRetainSourceFiles"
+                                        type="checkbox"
+                                        class="w-5 h-5"
+                                    />
+                                </label>
+                                <label
+                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)]"
+                                >
+                                    <span class="text-sm"
+                                        >Retain processed audio file</span
+                                    >
+                                    <input
+                                        id="settingsRetainProcessedAudio"
+                                        type="checkbox"
+                                        class="w-5 h-5"
+                                    />
+                                </label>
+                                <label
+                                    class="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)]"
+                                >
+                                    <span class="text-sm"
+                                        >Retain generated export files</span
+                                    >
+                                    <input
+                                        id="settingsRetainExportFiles"
+                                        type="checkbox"
+                                        class="w-5 h-5"
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                        <div data-settings-tab-panel="advanced" class="hidden">
                             <h3 class="font-display font-semibold text-sm mb-3">
                                 Upcoming / Candidate Cleanup
                             </h3>
@@ -1373,7 +1467,7 @@
                                 </label>
                             </div>
                         </div>
-                        <div>
+                        <div data-settings-tab-panel="about" class="hidden">
                             <h3 class="font-display font-semibold text-sm mb-3">
                                 About
                             </h3>

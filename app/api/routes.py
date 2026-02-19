@@ -111,6 +111,9 @@ async def create_job(
         diarization=diarization,
         summary_enabled=summary_enabled,
         summary_style=normalized_summary_style,
+        retain_source_files=global_settings.retain_source_files,
+        retain_processed_audio=global_settings.retain_processed_audio,
+        retain_export_files=global_settings.retain_export_files,
         output_formats=selected_formats,
     )
     try:

@@ -21,6 +21,9 @@ class JobCreateParams(BaseModel):
     diarization: bool = True
     summary_enabled: bool = False
     summary_style: SummaryStyle = "short"
+    retain_source_files: bool = True
+    retain_processed_audio: bool = True
+    retain_export_files: bool = True
     output_formats: List[str] = Field(default_factory=lambda: ["txt", "srt", "vtt", "json"])
 
 
@@ -100,6 +103,9 @@ class GlobalSettings(BaseModel):
     llm_api_base: Optional[str] = None
     llm_api_key: Optional[str] = None
     llm_model: str = "gpt-4o-mini"
+    retain_source_files: bool = True
+    retain_processed_audio: bool = True
+    retain_export_files: bool = True
     summary_prompt_templates: Dict[str, str] = Field(
         default_factory=default_summary_prompt_templates
     )
@@ -118,6 +124,9 @@ class GlobalSettingsUpdate(BaseModel):
     llm_api_base: Optional[str] = None
     llm_api_key: Optional[str] = None
     llm_model: Optional[str] = None
+    retain_source_files: Optional[bool] = None
+    retain_processed_audio: Optional[bool] = None
+    retain_export_files: Optional[bool] = None
     summary_prompt_templates: Optional[Dict[str, str]] = None
     hf_token: Optional[str] = None
     app_host: Optional[str] = None

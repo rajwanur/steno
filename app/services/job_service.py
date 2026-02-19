@@ -197,6 +197,7 @@ class JobService:
             job.progress = 100
             job.step = "done"
             job.updated_at = self._utcnow()
+            self._apply_storage_retention(job)
             self._push_event(job, "Completed successfully.")
             self._save_job(job)
 
@@ -208,6 +209,7 @@ class JobService:
             job.step = "failed"
             job.error = str(exc)
             job.updated_at = self._utcnow()
+            self._apply_storage_retention(job)
             self._push_event(job, f"Failed: {job.error}")
             self._save_job(job)
         finally:
@@ -346,5 +348,43 @@ class JobService:
         job.step = "cancelled"
         job.error = None
         job.updated_at = self._utcnow()
+        self._apply_storage_retention(job)
         self._push_event(job, message)
         self._save_job(job)
+
+    def _apply_storage_retention(self, job: JobState) -> None:
+        source = Path(job.source_path) if job.source_path else None
+        audio = Path(job.audio_path) if job.audio_path else None
+
+        if not job.params.retain_export_files:
+            for _, file_path in list(job.result.generated_files.items()):
+                try:
+                    p = Path(file_path)
+                    if p.exists() and p.is_file():
+                        p.unlink()
+                except Exception:
+                    continue
+            job.result.generated_files = {}
+
+        if source and audio and source == audio:
+            if not (job.params.retain_source_files or job.params.retain_processed_audio):
+                self._remove_file_if_exists(source)
+                job.source_path = ""
+                job.audio_path = ""
+            return
+
+        if source and not job.params.retain_source_files:
+            self._remove_file_if_exists(source)
+            job.source_path = ""
+
+        if audio and not job.params.retain_processed_audio:
+            self._remove_file_if_exists(audio)
+            job.audio_path = ""
+
+    @staticmethod
+    def _remove_file_if_exists(path: Path) -> None:
+        try:
+            if path.exists() and path.is_file():
+                path.unlink()
+        except Exception:
+            return
