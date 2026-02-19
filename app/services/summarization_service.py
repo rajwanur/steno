@@ -5,6 +5,7 @@ import re
 from openai import OpenAI
 
 from app.config import settings
+from app.core.summary_prompts import SUMMARY_PROMPT_TEMPLATES
 
 
 class SummarizationService:
@@ -22,6 +23,7 @@ class SummarizationService:
         self,
         transcript: str,
         style: str,
+        style_prompt: str | None = None,
         llm_api_base: str | None = None,
         llm_api_key: str | None = None,
         llm_model: str | None = None,
@@ -33,12 +35,11 @@ class SummarizationService:
         if not api_base or not api_key:
             raise RuntimeError("Summary requested but LLM API is not configured.")
 
-        style_prompt = {
-            "short": "Give a concise 3-5 sentence summary.",
-            "detailed": "Provide a detailed structured summary with key context and decisions.",
-            "bullet": "Provide a bullet-point summary of key points.",
-            "action_items": "Extract clear action items with owners if mentioned and deadlines if present.",
-        }.get(style, "Give a concise summary.")
+        resolved_style_prompt = (
+            style_prompt.strip()
+            if isinstance(style_prompt, str) and style_prompt.strip()
+            else SUMMARY_PROMPT_TEMPLATES.get(style, "Give a concise summary.")
+        )
 
         client = OpenAI(base_url=api_base, api_key=api_key)
 
@@ -55,7 +56,7 @@ class SummarizationService:
                 },
                 {
                     "role": "user",
-                    "content": f"{style_prompt}\n\nTranscript:\n{transcript}",
+                    "content": f"{resolved_style_prompt}\n\nTranscript:\n{transcript}",
                 },
             ],
         )

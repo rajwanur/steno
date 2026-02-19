@@ -1,10 +1,20 @@
 const el = (id) => document.getElementById(id);
 const THEME_STORAGE_KEY = "ui-theme-preference";
+const SUMMARY_RENDER_MODE_STORAGE_KEY = "summary-render-mode-preference";
 const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+const DEFAULT_SUMMARY_PROMPT_TEMPLATES = {
+  short: "Give a concise 3-5 sentence summary.",
+  detailed:
+    "Provide a detailed structured summary with key context and decisions.",
+  bullet: "Provide a bullet-point summary of key points.",
+  action_items:
+    "Extract clear action items with owners if mentioned and deadlines if present.",
+};
 
 const state = {
   currentTab: "history",
   previewMode: "text",
+  summaryRenderMode: "text",
   recording: false,
   recordingTime: 0,
   recordingTimer: null,
@@ -14,6 +24,8 @@ const state = {
   audioUrl: null,
   deleteCandidateId: null,
   globalSettings: null,
+  summaryPromptTemplates: { ...DEFAULT_SUMMARY_PROMPT_TEMPLATES },
+  currentSummaryText: "",
 };
 
 const refs = {
@@ -77,11 +89,22 @@ const refs = {
   previewContent: el("previewContent"),
   copyTranscriptionBtn: el("copyTranscriptionBtn"),
   summaryType: el("summaryType"),
+  summaryRenderTextBtn: el("summaryRenderTextBtn"),
+  summaryRenderMarkdownBtn: el("summaryRenderMarkdownBtn"),
+  summaryPromptPreview: el("summaryPromptPreview"),
+  openPromptEditorBtn: el("openPromptEditorBtn"),
   generateSummaryBtn: el("generateSummaryBtn"),
   regenerateSummaryBtn: el("regenerateSummaryBtn"),
   downloadSummaryBtn: el("downloadSummaryBtn"),
   copySummaryBtn: el("copySummaryBtn"),
   summaryOutput: el("summaryOutput"),
+  settingsSummaryPromptStyle: el("settingsSummaryPromptStyle"),
+  settingsSummaryPromptText: el("settingsSummaryPromptText"),
+  settingsSummaryPromptReset: el("settingsSummaryPromptReset"),
+  settingsDeleteSummaryOptionBtn: el("settingsDeleteSummaryOptionBtn"),
+  settingsNewSummaryOptionKey: el("settingsNewSummaryOptionKey"),
+  settingsNewSummaryOptionPrompt: el("settingsNewSummaryOptionPrompt"),
+  settingsAddSummaryOptionBtn: el("settingsAddSummaryOptionBtn"),
   toast: el("toast"),
   toastMessage: el("toastMessage"),
   themeMenuBtn: el("themeMenuBtn"),
@@ -212,6 +235,119 @@ function escapeHtml(str) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function applyInlineMarkdown(text) {
+  return text
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+}
+
+function renderMarkdownSummary(markdownText) {
+  const escaped = escapeHtml(markdownText || "").replace(/\r\n/g, "\n");
+  const lines = escaped.split("\n");
+  const blocks = [];
+  let inCode = false;
+  let codeBuffer = [];
+  let listBuffer = [];
+
+  const flushList = () => {
+    if (!listBuffer.length) return;
+    blocks.push(`<ul class="list-disc pl-5 space-y-1">${listBuffer.join("")}</ul>`);
+    listBuffer = [];
+  };
+
+  const flushCode = () => {
+    if (!codeBuffer.length) return;
+    blocks.push(
+      `<pre class="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg p-3 overflow-x-auto"><code>${codeBuffer.join("\n")}</code></pre>`,
+    );
+    codeBuffer = [];
+  };
+
+  lines.forEach((rawLine) => {
+    const line = rawLine.trimEnd();
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```")) {
+      if (inCode) {
+        inCode = false;
+        flushCode();
+      } else {
+        flushList();
+        inCode = true;
+      }
+      return;
+    }
+
+    if (inCode) {
+      codeBuffer.push(line);
+      return;
+    }
+
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+
+    const listMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    if (listMatch) {
+      listBuffer.push(`<li>${applyInlineMarkdown(listMatch[1])}</li>`);
+      return;
+    }
+
+    flushList();
+
+    if (trimmed.startsWith("### ")) {
+      blocks.push(`<h3 class="font-semibold text-sm">${applyInlineMarkdown(trimmed.slice(4))}</h3>`);
+      return;
+    }
+    if (trimmed.startsWith("## ")) {
+      blocks.push(`<h2 class="font-semibold text-base">${applyInlineMarkdown(trimmed.slice(3))}</h2>`);
+      return;
+    }
+    if (trimmed.startsWith("# ")) {
+      blocks.push(`<h1 class="font-semibold text-lg">${applyInlineMarkdown(trimmed.slice(2))}</h1>`);
+      return;
+    }
+
+    blocks.push(`<p>${applyInlineMarkdown(trimmed)}</p>`);
+  });
+
+  flushList();
+  if (inCode) flushCode();
+
+  return blocks.join("");
+}
+
+function setSummaryRenderMode(mode) {
+  state.summaryRenderMode = mode === "markdown" ? "markdown" : "text";
+  localStorage.setItem(SUMMARY_RENDER_MODE_STORAGE_KEY, state.summaryRenderMode);
+  if (refs.summaryRenderTextBtn && refs.summaryRenderMarkdownBtn) {
+    const textActive = state.summaryRenderMode === "text";
+    refs.summaryRenderTextBtn.classList.toggle("bg-[var(--bg-card)]", textActive);
+    refs.summaryRenderTextBtn.classList.toggle("text-[var(--text-primary)]", textActive);
+    refs.summaryRenderTextBtn.classList.toggle("text-[var(--text-muted)]", !textActive);
+    refs.summaryRenderMarkdownBtn.classList.toggle(
+      "bg-[var(--bg-card)]",
+      !textActive,
+    );
+    refs.summaryRenderMarkdownBtn.classList.toggle(
+      "text-[var(--text-primary)]",
+      !textActive,
+    );
+    refs.summaryRenderMarkdownBtn.classList.toggle(
+      "text-[var(--text-muted)]",
+      textActive,
+    );
+  }
+  renderSummary(state.currentSummaryText || "");
+}
+
+function getStoredSummaryRenderMode() {
+  const value = localStorage.getItem(SUMMARY_RENDER_MODE_STORAGE_KEY);
+  return value === "markdown" ? "markdown" : "text";
 }
 
 function formatTranscript(transcript) {
@@ -373,6 +509,161 @@ function syncSummaryStyleAvailability() {
   refs.summary_style.classList.toggle("cursor-not-allowed", !enabled);
 }
 
+function normalizeSummaryStyleKey(value) {
+  const cleaned = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return cleaned;
+}
+
+function summaryStyleLabel(styleKey) {
+  return String(styleKey || "")
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function listSummaryStyles() {
+  return Object.keys(state.summaryPromptTemplates || {});
+}
+
+function isDefaultSummaryStyle(styleKey) {
+  return Object.prototype.hasOwnProperty.call(
+    DEFAULT_SUMMARY_PROMPT_TEMPLATES,
+    styleKey,
+  );
+}
+
+function syncSummaryOptionActionsState() {
+  if (!refs.settingsDeleteSummaryOptionBtn || !refs.settingsSummaryPromptStyle) return;
+  const style = normalizeSummaryStyleKey(refs.settingsSummaryPromptStyle.value || "");
+  const canDelete = !!style && !isDefaultSummaryStyle(style);
+  refs.settingsDeleteSummaryOptionBtn.disabled = !canDelete;
+}
+
+function normalizeSummaryPromptTemplates(templates) {
+  const normalized = { ...DEFAULT_SUMMARY_PROMPT_TEMPLATES };
+  if (!templates || typeof templates !== "object") return normalized;
+
+  Object.entries(templates).forEach(([style, prompt]) => {
+    const normalizedStyle = normalizeSummaryStyleKey(style);
+    if (!normalizedStyle || typeof prompt !== "string") return;
+    const cleaned = prompt.trim();
+    if (cleaned) normalized[normalizedStyle] = cleaned;
+  });
+  return normalized;
+}
+
+function getPromptTemplate(style) {
+  const normalizedStyle = normalizeSummaryStyleKey(style);
+  const safeStyle =
+    (normalizedStyle && state.summaryPromptTemplates[normalizedStyle] && normalizedStyle) ||
+    "short";
+  return (
+    state.summaryPromptTemplates[safeStyle] ||
+    DEFAULT_SUMMARY_PROMPT_TEMPLATES[safeStyle]
+  );
+}
+
+function repopulateSummaryStyleSelect(node, selectedStyle) {
+  if (!node) return;
+  const styles = listSummaryStyles();
+  node.innerHTML = "";
+  styles.forEach((style) => {
+    const opt = document.createElement("option");
+    opt.value = style;
+    opt.textContent = summaryStyleLabel(style);
+    if (style === selectedStyle) opt.selected = true;
+    node.appendChild(opt);
+  });
+}
+
+function syncSummaryStyleSelectors(preferredStyle = "short") {
+  const styles = listSummaryStyles();
+  if (!styles.length) return;
+  const normalizedPreferred = normalizeSummaryStyleKey(preferredStyle);
+  const selectedStyle = styles.includes(normalizedPreferred)
+    ? normalizedPreferred
+    : styles[0];
+  repopulateSummaryStyleSelect(refs.summaryType, selectedStyle);
+  repopulateSummaryStyleSelect(refs.summary_style, selectedStyle);
+  repopulateSummaryStyleSelect(refs.settingsSummaryPromptStyle, selectedStyle);
+  syncSummaryOptionActionsState();
+}
+
+function syncSummaryPromptEditor() {
+  if (!refs.settingsSummaryPromptStyle || !refs.settingsSummaryPromptText) return;
+  const style = refs.settingsSummaryPromptStyle.value || listSummaryStyles()[0] || "short";
+  refs.settingsSummaryPromptText.value = getPromptTemplate(style);
+  syncSummaryOptionActionsState();
+}
+
+function syncSummaryPromptPreview() {
+  if (!refs.summaryPromptPreview || !refs.summaryType) return;
+  const style = refs.summaryType.value || listSummaryStyles()[0] || "short";
+  refs.summaryPromptPreview.value = getPromptTemplate(style);
+}
+
+function addSummaryOption() {
+  const rawKey = refs.settingsNewSummaryOptionKey?.value || "";
+  const rawPrompt = refs.settingsNewSummaryOptionPrompt?.value || "";
+  const styleKey = normalizeSummaryStyleKey(rawKey);
+  const prompt = rawPrompt.trim();
+
+  if (!styleKey) {
+    setError("Provide a valid summary option key (letters, numbers, underscore).");
+    return;
+  }
+  if (!prompt) {
+    setError("Provide a template prompt for the new summary option.");
+    return;
+  }
+  if (state.summaryPromptTemplates[styleKey]) {
+    setError(`Summary option '${styleKey}' already exists.`);
+    return;
+  }
+
+  state.summaryPromptTemplates[styleKey] = prompt;
+  syncSummaryStyleSelectors(styleKey);
+  syncSummaryPromptEditor();
+  syncSummaryPromptPreview();
+
+  if (refs.settingsNewSummaryOptionKey) refs.settingsNewSummaryOptionKey.value = "";
+  if (refs.settingsNewSummaryOptionPrompt)
+    refs.settingsNewSummaryOptionPrompt.value = "";
+
+  setError("");
+  showToast(`Added summary option: ${styleKey}`);
+}
+
+function deleteSelectedSummaryOption() {
+  if (!refs.settingsSummaryPromptStyle) return;
+  const style = normalizeSummaryStyleKey(refs.settingsSummaryPromptStyle.value || "");
+  if (!style) return;
+  if (isDefaultSummaryStyle(style)) {
+    setError("Built-in summary options cannot be deleted.");
+    return;
+  }
+  if (!state.summaryPromptTemplates[style]) return;
+  const confirmed = window.confirm(
+    `Delete summary option '${style}'? This change will be saved when you click Save Changes.`,
+  );
+  if (!confirmed) return;
+
+  delete state.summaryPromptTemplates[style];
+  const fallback = listSummaryStyles()[0] || "short";
+  syncSummaryStyleSelectors(fallback);
+  syncSummaryPromptEditor();
+  syncSummaryPromptPreview();
+  setError("");
+  showToast(`Deleted summary option: ${style}`);
+}
+
 function renderAboutInfo(about) {
   if (!about) return;
   if (refs.aboutName) refs.aboutName.textContent = about.name || "Steno";
@@ -413,6 +704,9 @@ function syncLanguageDefaultOptions(selectedValue) {
 function applyGlobalSettings(settings) {
   if (!settings) return;
   state.globalSettings = settings;
+  state.summaryPromptTemplates = normalizeSummaryPromptTemplates(
+    settings.summary_prompt_templates,
+  );
 
   if (refs.settingsDefaultModel)
     refs.settingsDefaultModel.value = settings.default_model || "";
@@ -445,6 +739,10 @@ function applyGlobalSettings(settings) {
   refs.batch_size.value = settings.default_batch_size ?? refs.batch_size.value;
   refs.device.value = settings.default_device || refs.device.value;
   refs.compute_type.value = settings.compute_type || refs.compute_type.value;
+
+  syncSummaryStyleSelectors(refs.summaryType?.value || "short");
+  syncSummaryPromptEditor();
+  syncSummaryPromptPreview();
 }
 
 function buildGlobalSettingsPayload() {
@@ -457,6 +755,7 @@ function buildGlobalSettingsPayload() {
     llm_api_base: (refs.settingsLlmApiBase.value || "").trim() || null,
     llm_api_key: (refs.settingsLlmApiKey.value || "").trim() || null,
     llm_model: (refs.settingsLlmModel.value || "").trim() || "gpt-4o-mini",
+    summary_prompt_templates: { ...state.summaryPromptTemplates },
     hf_token: (refs.settingsHfToken.value || "").trim() || null,
     app_host: (refs.settingsAppHost.value || "").trim() || "0.0.0.0",
     app_port: Number(refs.settingsAppPort.value || "8000"),
@@ -617,9 +916,14 @@ function updateStats() {
 }
 
 function renderSummary(summaryText) {
+  state.currentSummaryText = summaryText || "";
   if (!summaryText || !summaryText.trim()) {
     refs.summaryOutput.innerHTML =
       '<div class="text-[var(--text-muted)] italic text-sm">AI summary will be generated after transcription is complete.</div>';
+    return;
+  }
+  if (state.summaryRenderMode === "markdown") {
+    refs.summaryOutput.innerHTML = `<div class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 text-sm text-[var(--text-secondary)] space-y-2">${renderMarkdownSummary(summaryText)}</div>`;
     return;
   }
   refs.summaryOutput.innerHTML = `<div class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 text-sm text-[var(--text-secondary)] whitespace-pre-wrap">${escapeHtml(summaryText)}</div>`;
@@ -657,10 +961,15 @@ function applyJobConfig(job) {
   refs.compute_type.value = job.params.compute_type || refs.compute_type.value;
   refs.diarization.checked = !!job.params.diarization;
   refs.summary_enabled.checked = !!job.params.summary_enabled;
-  refs.summary_style.value =
-    job.params.summary_style || refs.summary_style.value;
+  const requestedStyle = normalizeSummaryStyleKey(job.params.summary_style || "");
+  if (requestedStyle && !state.summaryPromptTemplates[requestedStyle]) {
+    state.summaryPromptTemplates[requestedStyle] = "Give a concise summary.";
+    syncSummaryStyleSelectors(requestedStyle);
+  }
+  refs.summary_style.value = requestedStyle || refs.summary_style.value;
   syncSummaryStyleAvailability();
-  refs.summaryType.value = job.params.summary_style || refs.summaryType.value;
+  refs.summaryType.value = requestedStyle || refs.summaryType.value;
+  syncSummaryPromptPreview();
   const set = new Set(job.params.output_formats || []);
   document.querySelectorAll("input[name='output_format']").forEach((i) => {
     i.checked = set.has(i.value);
@@ -933,6 +1242,69 @@ function attachEvents() {
   });
   refs.summary_enabled.addEventListener("change", syncSummaryStyleAvailability);
 
+  if (refs.summaryType) {
+    refs.summaryType.addEventListener("change", syncSummaryPromptPreview);
+  }
+  if (refs.summaryRenderTextBtn) {
+    refs.summaryRenderTextBtn.addEventListener("click", () =>
+      setSummaryRenderMode("text"),
+    );
+  }
+  if (refs.summaryRenderMarkdownBtn) {
+    refs.summaryRenderMarkdownBtn.addEventListener("click", () =>
+      setSummaryRenderMode("markdown"),
+    );
+  }
+  if (refs.settingsSummaryPromptStyle) {
+    refs.settingsSummaryPromptStyle.addEventListener("change", () => {
+      syncSummaryPromptEditor();
+    });
+  }
+  if (refs.settingsSummaryPromptText && refs.settingsSummaryPromptStyle) {
+    refs.settingsSummaryPromptText.addEventListener("input", () => {
+      const style = normalizeSummaryStyleKey(
+        refs.settingsSummaryPromptStyle.value || "",
+      );
+      const value = refs.settingsSummaryPromptText.value.trim();
+      if (!style) return;
+      state.summaryPromptTemplates[style] =
+        value || DEFAULT_SUMMARY_PROMPT_TEMPLATES[style] || "Give a concise summary.";
+      syncSummaryPromptPreview();
+    });
+  }
+  if (refs.settingsSummaryPromptReset && refs.settingsSummaryPromptStyle) {
+    refs.settingsSummaryPromptReset.addEventListener("click", () => {
+      const style = normalizeSummaryStyleKey(
+        refs.settingsSummaryPromptStyle.value || "",
+      );
+      if (!style) return;
+      state.summaryPromptTemplates[style] =
+        DEFAULT_SUMMARY_PROMPT_TEMPLATES[style] || "Give a concise summary.";
+      syncSummaryPromptEditor();
+      syncSummaryPromptPreview();
+      showToast("Template reset for selected summary style");
+    });
+  }
+  if (refs.settingsAddSummaryOptionBtn) {
+    refs.settingsAddSummaryOptionBtn.addEventListener("click", addSummaryOption);
+  }
+  if (refs.settingsDeleteSummaryOptionBtn) {
+    refs.settingsDeleteSummaryOptionBtn.addEventListener(
+      "click",
+      deleteSelectedSummaryOption,
+    );
+  }
+  if (refs.openPromptEditorBtn && refs.settingsSummaryPromptStyle) {
+    refs.openPromptEditorBtn.addEventListener("click", () => {
+      toggleSettings(true);
+      const selected = normalizeSummaryStyleKey(refs.summaryType.value || "");
+      syncSummaryStyleSelectors(selected || "short");
+      refs.settingsSummaryPromptStyle.value =
+        selected || refs.settingsSummaryPromptStyle.value;
+      syncSummaryPromptEditor();
+    });
+  }
+
   refs.tabHistory.addEventListener("click", () => {
     state.currentTab = "history";
     refs.tabHistory.classList.add("tab-active", "text-[var(--text-primary)]");
@@ -1075,6 +1447,7 @@ async function init() {
     }
   });
   attachEvents();
+  setSummaryRenderMode(getStoredSummaryRenderMode());
   syncSummaryStyleAvailability();
   await loadConfig();
   await loadGlobalSettings();

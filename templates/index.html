@@ -759,16 +759,7 @@
                             <select
                                 id="summaryType"
                                 class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring cursor-pointer hover:border-[var(--border)] transition-colors"
-                            >
-                                <option value="short">Brief Summary</option>
-                                <option value="detailed">
-                                    Detailed Summary
-                                </option>
-                                <option value="action_items">
-                                    Action Items
-                                </option>
-                                <option value="bullet">Meeting Notes</option>
-                            </select>
+                            ></select>
 
                             <div class="flex gap-2">
                                 <label
@@ -803,6 +794,45 @@
                                     />
                                     Topics
                                 </label>
+                            </div>
+                            <div class="flex gap-2">
+                                <button
+                                    id="summaryRenderTextBtn"
+                                    type="button"
+                                    class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-subtle)]"
+                                >
+                                    Text
+                                </button>
+                                <button
+                                    id="summaryRenderMarkdownBtn"
+                                    type="button"
+                                    class="px-2.5 py-1.5 rounded-lg text-xs text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]"
+                                >
+                                    Markdown
+                                </button>
+                            </div>
+                            <div>
+                                <div
+                                    class="flex items-center justify-between mb-1.5"
+                                >
+                                    <label
+                                        for="summaryPromptPreview"
+                                        class="text-xs text-[var(--text-muted)]"
+                                        >Prompt Template Preview</label
+                                    >
+                                    <button
+                                        id="openPromptEditorBtn"
+                                        type="button"
+                                        class="text-xs text-[var(--accent)] hover:underline"
+                                    >
+                                        Edit templates
+                                    </button>
+                                </div>
+                                <textarea
+                                    id="summaryPromptPreview"
+                                    readonly
+                                    class="w-full min-h-[84px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-secondary)]"
+                                ></textarea>
                             </div>
                         </div>
                     </div>
@@ -1093,6 +1123,102 @@
                         </div>
                         <div>
                             <h3 class="font-display font-semibold text-sm mb-3">
+                                Summary Prompt Templates
+                            </h3>
+                            <p class="text-xs text-[var(--text-muted)] mb-3">
+                                Manage prompt templates per summary option. Add
+                                new options to make them available everywhere.
+                            </p>
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label
+                                            for="settingsSummaryPromptStyle"
+                                            class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                            >Summary Option</label
+                                        >
+                                        <select
+                                            id="settingsSummaryPromptStyle"
+                                            class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                        ></select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 items-end">
+                                        <button
+                                            id="settingsSummaryPromptReset"
+                                            type="button"
+                                            class="w-full px-3 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]"
+                                        >
+                                            Reset
+                                        </button>
+                                        <button
+                                            id="settingsDeleteSummaryOptionBtn"
+                                            type="button"
+                                            class="w-full px-3 py-2 rounded-xl bg-red-600 text-xs text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        for="settingsSummaryPromptText"
+                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                        >Template Prompt</label
+                                    >
+                                    <textarea
+                                        id="settingsSummaryPromptText"
+                                        rows="4"
+                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                    ></textarea>
+                                </div>
+                                <div
+                                    class="border border-[var(--border-subtle)] rounded-xl p-3 bg-[var(--bg-secondary)]"
+                                >
+                                    <div
+                                        class="text-xs text-[var(--text-muted)] mb-2"
+                                    >
+                                        Add New Summary Option
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label
+                                                for="settingsNewSummaryOptionKey"
+                                                class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                                >Option Key</label
+                                            >
+                                            <input
+                                                id="settingsNewSummaryOptionKey"
+                                                type="text"
+                                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                                placeholder="example: executive_brief"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label
+                                                for="settingsNewSummaryOptionPrompt"
+                                                class="block text-xs text-[var(--text-muted)] mb-1.5"
+                                                >Template Prompt</label
+                                            >
+                                            <textarea
+                                                id="settingsNewSummaryOptionPrompt"
+                                                rows="2"
+                                                class="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
+                                                placeholder="Prompt instruction for this new summary style"
+                                            ></textarea>
+                                        </div>
+                                    </div>
+                                    <button
+                                        id="settingsAddSummaryOptionBtn"
+                                        type="button"
+                                        class="mt-3 px-3 py-2 rounded-xl bg-[var(--accent)] text-xs font-medium text-[var(--bg-primary)] hover:bg-[var(--accent-hover)]"
+                                    >
+                                        Add Summary Option
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-semibold text-sm mb-3">
                                 Upcoming / Candidate Cleanup
                             </h3>
                             <div
@@ -1216,19 +1342,6 @@
                                         disabled
                                         type="number"
                                         value="1024"
-                                        class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs text-[var(--text-muted)] mb-1.5"
-                                        >Custom Prompt (upcoming)</label
-                                    >
-                                    <input
-                                        id="settingsCustomPrompt"
-                                        disabled
-                                        type="text"
-                                        value="Not implemented yet"
                                         class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm"
                                     />
                                 </div>
@@ -1515,12 +1628,7 @@
                         ><select
                             id="summary_style"
                             class="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus-ring"
-                        >
-                            <option value="short">short</option>
-                            <option value="detailed">detailed</option>
-                            <option value="bullet">bullet</option>
-                            <option value="action_items">action_items</option>
-                        </select>
+                        ></select>
                     </div>
                     <div>
                         <label

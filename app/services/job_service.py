@@ -133,6 +133,9 @@ class JobService:
 
         try:
             global_settings = self.global_settings_service.get()
+            style_prompt = global_settings.summary_prompt_templates.get(
+                job.params.summary_style
+            )
 
             def _progress_cb(progress: int, step: str, event: str) -> None:
                 if job.cancel_requested:
@@ -182,6 +185,7 @@ class JobService:
                     self.summarization_service.summarize,
                     self._transcript_for_summary(job),
                     job.params.summary_style,
+                    style_prompt,
                     global_settings.llm_api_base,
                     global_settings.llm_api_key,
                     global_settings.llm_model,
@@ -310,10 +314,12 @@ class JobService:
         self._save_job(job)
 
         global_settings = self.global_settings_service.get()
+        style_prompt = global_settings.summary_prompt_templates.get(style)
         summary = await asyncio.to_thread(
             self.summarization_service.summarize,
             transcript,
             style,
+            style_prompt,
             global_settings.llm_api_base,
             global_settings.llm_api_key,
             global_settings.llm_model,

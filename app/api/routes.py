@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
 from app.config import settings
+from app.core.summary_prompts import normalize_summary_style_key
 from app.schemas import (
     GlobalSettings,
     GlobalSettingsUpdate,
@@ -17,7 +18,6 @@ from app.schemas import (
     JobStatusResponse,
     QueueControlResponse,
     SummaryRequest,
-    SummaryStyle,
 )
 from app.services.job_service import JobService
 
@@ -80,7 +80,7 @@ async def create_job(
     compute_type: str | None = Form(None),
     diarization: bool = Form(True),
     summary_enabled: bool = Form(False),
-    summary_style: SummaryStyle = Form("short"),
+    summary_style: str = Form("short"),
     output_formats: str = Form('["txt","srt","vtt","json"]'),
     service: JobService = Depends(get_job_service),
 ) -> JobCreateResponse:
@@ -98,6 +98,7 @@ async def create_job(
         raise HTTPException(status_code=400, detail=f"Unsupported format(s): {unknown}")
 
     global_settings = service.global_settings_service.get()
+    normalized_summary_style = normalize_summary_style_key(summary_style) or "short"
 
     params = JobCreateParams(
         model_name=model_name or global_settings.default_model,
@@ -109,7 +110,7 @@ async def create_job(
         compute_type=compute_type or global_settings.compute_type,
         diarization=diarization,
         summary_enabled=summary_enabled,
-        summary_style=summary_style,
+        summary_style=normalized_summary_style,
         output_formats=selected_formats,
     )
     try:
@@ -272,8 +273,9 @@ async def regenerate_summary(
     payload: SummaryRequest,
     service: JobService = Depends(get_job_service),
 ) -> JobStatusResponse:
+    normalized_style = normalize_summary_style_key(payload.style) or "short"
     try:
-        job = await service.regenerate_summary(job_id=job_id, style=payload.style)
+        job = await service.regenerate_summary(job_id=job_id, style=normalized_style)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Job not found") from exc
     except RuntimeError as exc:

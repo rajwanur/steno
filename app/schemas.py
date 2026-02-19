@@ -5,9 +5,11 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.core.summary_prompts import default_summary_prompt_templates
+
 
 JobStatus = Literal["queued", "processing", "completed", "failed", "cancelled"]
-SummaryStyle = Literal["short", "detailed", "bullet", "action_items"]
+SummaryStyle = str
 
 
 class JobCreateParams(BaseModel):
@@ -98,6 +100,9 @@ class GlobalSettings(BaseModel):
     llm_api_base: Optional[str] = None
     llm_api_key: Optional[str] = None
     llm_model: str = "gpt-4o-mini"
+    summary_prompt_templates: Dict[str, str] = Field(
+        default_factory=default_summary_prompt_templates
+    )
     hf_token: Optional[str] = None
     app_host: str = "0.0.0.0"
     app_port: int = 8000
@@ -113,6 +118,7 @@ class GlobalSettingsUpdate(BaseModel):
     llm_api_base: Optional[str] = None
     llm_api_key: Optional[str] = None
     llm_model: Optional[str] = None
+    summary_prompt_templates: Optional[Dict[str, str]] = None
     hf_token: Optional[str] = None
     app_host: Optional[str] = None
     app_port: Optional[int] = None

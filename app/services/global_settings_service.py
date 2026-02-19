@@ -4,6 +4,10 @@ import json
 from typing import Any, Dict
 
 from app.config import settings
+from app.core.summary_prompts import (
+    default_summary_prompt_templates,
+    merge_summary_prompt_templates,
+)
 from app.schemas import GlobalSettings, GlobalSettingsUpdate
 
 
@@ -21,6 +25,7 @@ class GlobalSettingsService:
             llm_api_base=settings.llm_api_base,
             llm_api_key=settings.llm_api_key,
             llm_model=settings.llm_model,
+            summary_prompt_templates=default_summary_prompt_templates(),
             hf_token=settings.hf_token,
             app_host=settings.app_host,
             app_port=settings.app_port,
@@ -33,6 +38,8 @@ class GlobalSettingsService:
             return defaults
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
+            raw_templates = raw.get("summary_prompt_templates")
+            raw["summary_prompt_templates"] = merge_summary_prompt_templates(raw_templates)
             merged = {**defaults.model_dump(), **raw}
             return GlobalSettings.model_validate(merged)
         except Exception:
@@ -41,6 +48,10 @@ class GlobalSettingsService:
     def update(self, payload: GlobalSettingsUpdate) -> GlobalSettings:
         current = self.get()
         patch: Dict[str, Any] = payload.model_dump(exclude_unset=True)
+        if "summary_prompt_templates" in patch:
+            patch["summary_prompt_templates"] = merge_summary_prompt_templates(
+                patch["summary_prompt_templates"]
+            )
         updated = current.model_copy(update=patch)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
