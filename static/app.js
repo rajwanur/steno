@@ -1,6 +1,7 @@
 const el = (id) => document.getElementById(id);
 const THEME_STORAGE_KEY = "ui-theme-preference";
 const SUMMARY_RENDER_MODE_STORAGE_KEY = "summary-render-mode-preference";
+const SPEAKER_NAME_OVERRIDES_STORAGE_KEY = "speaker-name-overrides-v1";
 const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 const DEFAULT_SUMMARY_PROMPT_TEMPLATES = {
   short: "Give a concise 3-5 sentence summary.",
@@ -27,6 +28,10 @@ const state = {
   globalSettings: null,
   summaryPromptTemplates: { ...DEFAULT_SUMMARY_PROMPT_TEMPLATES },
   currentSummaryText: "",
+  speakerNameOverridesByJob: {},
+  speakerNameDraftByJob: {},
+  activeJobData: null,
+  activeJobResolvedTranscript: "",
 };
 
 const refs = {
@@ -57,6 +62,8 @@ const refs = {
   aboutLicense: el("aboutLicense"),
   aboutTechnologies: el("aboutTechnologies"),
   toggleTranscriptionSettings: el("toggleTranscriptionSettings"),
+  toggleSpeakerNamesBtn: el("toggleSpeakerNamesBtn"),
+  speakerNamePanel: el("speakerNamePanel"),
   transcriptionSettingsPanel: el("transcriptionSettingsPanel"),
   applyTranscriptionSettingsBtn: el("applyTranscriptionSettingsBtn"),
   tabHistory: el("tabHistory"),
@@ -88,6 +95,10 @@ const refs = {
   statusText: el("statusText"),
   errorText: el("errorText"),
   transcriptionOutput: el("transcriptionOutput"),
+  speakerLegendList: el("speakerLegendList"),
+  clearSpeakerNamesBtn: el("clearSpeakerNamesBtn"),
+  applySpeakerNamesBtn: el("applySpeakerNamesBtn"),
+  speakerNamesStatus: el("speakerNamesStatus"),
   previewTextBtn: el("previewTextBtn"),
   previewTimestampsBtn: el("previewTimestampsBtn"),
   previewContent: el("previewContent"),
@@ -225,13 +236,30 @@ function formatEvents(job) {
   return events
     .slice()
     .reverse()
-    .map((entry) => {
-      if (state.previewMode === "timestamps") {
-        return `<div class="font-mono text-[10px] bg-[var(--bg-card)] rounded-lg p-2">${escapeHtml(entry)}</div>`;
-      }
-      return `<div class="p-2 bg-[var(--bg-card)] rounded-lg"><div class="text-[var(--text-secondary)]">${escapeHtml(entry)}</div></div>`;
-    })
+    .map(
+      (entry) =>
+        `<div class="p-2 bg-[var(--bg-card)] rounded-lg"><div class="text-[var(--text-secondary)]">${escapeHtml(entry)}</div></div>`,
+    )
     .join("");
+}
+
+function getStoredSpeakerNameOverrides() {
+  const raw = localStorage.getItem(SPEAKER_NAME_OVERRIDES_STORAGE_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+function persistSpeakerNameOverrides() {
+  localStorage.setItem(
+    SPEAKER_NAME_OVERRIDES_STORAGE_KEY,
+    JSON.stringify(state.speakerNameOverridesByJob || {}),
+  );
 }
 
 function escapeHtml(str) {
@@ -239,6 +267,12 @@ function escapeHtml(str) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str)
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function applyInlineMarkdown(text) {
@@ -390,6 +424,139 @@ function transcriptFromSegments(segments) {
     .trim();
 }
 
+function speakersFromSegments(segments) {
+  if (!Array.isArray(segments) || !segments.length) return [];
+  const unique = new Set();
+  segments.forEach((seg) => {
+    const speaker =
+      typeof seg?.speaker === "string" && seg.speaker.trim()
+        ? seg.speaker.trim()
+        : "";
+    if (speaker) unique.add(speaker);
+  });
+  return [...unique];
+}
+
+function getJobSpeakerOverrides(jobId) {
+  const key = jobId ? String(jobId) : "";
+  const overrides = key ? state.speakerNameOverridesByJob[key] : null;
+  return overrides && typeof overrides === "object" ? overrides : {};
+}
+
+function getDisplaySpeakerName(jobId, rawSpeaker) {
+  const safeRaw = typeof rawSpeaker === "string" ? rawSpeaker.trim() : "";
+  if (!safeRaw) return "";
+  const overrides = getJobSpeakerOverrides(jobId);
+  const custom =
+    typeof overrides[safeRaw] === "string" ? overrides[safeRaw].trim() : "";
+  return custom || safeRaw;
+}
+
+function hashString(str) {
+  const input = String(str || "");
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function speakerBadgeStyle(speaker) {
+  const palette = [
+    [59, 130, 246],
+    [16, 185, 129],
+    [245, 158, 11],
+    [236, 72, 153],
+    [139, 92, 246],
+    [14, 165, 233],
+    [249, 115, 22],
+    [132, 204, 22],
+  ];
+  const [r, g, b] = palette[hashString(speaker) % palette.length];
+  return `background-color: rgba(${r}, ${g}, ${b}, 0.16); border-color: rgba(${r}, ${g}, ${b}, 0.5); color: rgb(${r}, ${g}, ${b});`;
+}
+
+function hasTranscriptAvailable(job, resolvedTranscript = "") {
+  const segments = Array.isArray(job?.result?.segments) ? job.result.segments : [];
+  if (segments.length) return true;
+  return !!String(resolvedTranscript || "").trim();
+}
+
+function setSpeakerNameControlsState(enabled, statusText = "") {
+  if (refs.toggleSpeakerNamesBtn) {
+    refs.toggleSpeakerNamesBtn.disabled = !enabled;
+  }
+  if (!enabled && refs.speakerNamePanel) {
+    refs.speakerNamePanel.classList.add("hidden");
+  }
+  if (refs.applySpeakerNamesBtn) {
+    refs.applySpeakerNamesBtn.disabled = !enabled;
+  }
+  if (refs.clearSpeakerNamesBtn) {
+    refs.clearSpeakerNamesBtn.disabled = !enabled;
+  }
+  if (refs.speakerNamesStatus) {
+    refs.speakerNamesStatus.textContent = statusText;
+  }
+}
+
+function renderSpeakerLegend(job) {
+  if (!refs.speakerLegendList) return;
+  const segments = Array.isArray(job?.result?.segments) ? job.result.segments : [];
+  const speakers = speakersFromSegments(segments);
+  const transcriptionAvailable = hasTranscriptAvailable(
+    job,
+    state.activeJobResolvedTranscript,
+  );
+
+  if (!job?.id || !transcriptionAvailable) {
+    setSpeakerNameControlsState(false, "Speaker names can be edited after transcription is available.");
+    refs.speakerLegendList.innerHTML = "";
+    return;
+  }
+
+  if (!speakers.length) {
+    setSpeakerNameControlsState(
+      false,
+      "No diarized speakers found for this transcription.",
+    );
+    refs.speakerLegendList.innerHTML = "";
+    return;
+  }
+
+  setSpeakerNameControlsState(true, "Edit names, then click Save & Apply.");
+  const jobKey = String(job.id);
+  const overrides = getJobSpeakerOverrides(job.id);
+  if (!state.speakerNameDraftByJob[jobKey]) {
+    state.speakerNameDraftByJob[jobKey] = { ...overrides };
+  }
+  const draft = state.speakerNameDraftByJob[jobKey];
+  refs.speakerLegendList.innerHTML = speakers
+    .map((speaker) => {
+      const encodedSpeaker = encodeURIComponent(speaker);
+      const value =
+        typeof draft[speaker] === "string"
+          ? escapeAttr(draft[speaker])
+          : typeof overrides[speaker] === "string"
+            ? escapeAttr(overrides[speaker])
+            : "";
+      return `<div class="flex items-center gap-2">
+        <span class="text-[10px] px-2 py-0.5 rounded border font-medium" style="${speakerBadgeStyle(
+          speaker,
+        )}">${escapeHtml(speaker)}</span>
+        <input
+          data-speaker-key="${encodedSpeaker}"
+          type="text"
+          value="${value}"
+          placeholder="Custom name"
+          class="flex-1 min-w-0 text-xs bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-md px-2 py-1 text-[var(--text-primary)] focus-ring"
+        />
+      </div>`;
+    })
+    .join("");
+}
+
 async function resolveTranscript(job) {
   const direct = (job?.result?.transcript || "").trim();
   if (direct) return direct;
@@ -418,29 +585,68 @@ function renderSegmentedTranscript(job, fallbackText) {
   const segments = Array.isArray(job?.result?.segments)
     ? job.result.segments
     : [];
+  const mode = state.previewMode === "timestamps" ? "timestamps" : "text";
   if (!segments.length) {
     if (!fallbackText.trim()) {
       return '<div class="text-[var(--text-muted)] italic">Transcript unavailable for this job.</div>';
     }
-    return `<div class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-secondary)] whitespace-pre-wrap">${escapeHtml(fallbackText)}</div>`;
+    if (mode === "timestamps") {
+      return `<div class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-secondary)] whitespace-pre-wrap">${formatTranscript(
+        fallbackText,
+      )}</div>`;
+    }
+    return `<div class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 text-sm text-[var(--text-secondary)] whitespace-pre-wrap">${escapeHtml(fallbackText)}</div>`;
+  }
+
+  if (mode === "text") {
+    return segments
+      .map((seg) => {
+        const rawSpeaker =
+          typeof seg?.speaker === "string" && seg.speaker.trim()
+            ? seg.speaker.trim()
+            : "";
+        const speaker = getDisplaySpeakerName(job?.id, rawSpeaker);
+        const text = typeof seg?.text === "string" ? seg.text.trim() : "";
+        return `<div class="m-2">${
+          speaker
+            ? `<span class="text-[10px] mr-1 px-1.5 py-0.5 rounded border font-medium" style="${speakerBadgeStyle(
+                rawSpeaker,
+              )}">${escapeHtml(speaker)}</span>`
+            : ""
+        }<span>${escapeHtml(text || "(no text)")}</span></div>`;
+      })
+      .join("");
   }
 
   return segments
     .map((seg) => {
       const start = formatClock(seg?.start);
       const end = formatClock(seg?.end);
-      const speaker =
+      const rawSpeaker =
         typeof seg?.speaker === "string" && seg.speaker.trim()
           ? seg.speaker.trim()
           : "";
+      const speaker = getDisplaySpeakerName(job?.id, rawSpeaker);
       const text = typeof seg?.text === "string" ? seg.text.trim() : "";
       return `<div class="m-2"><span class="text-[10px] font-mono text-[var(--accent)]">${start}-${end}</span>${
         speaker
-          ? `<span class="text-[10px] ml-1 px-1.5 py-0.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)]">${escapeHtml(speaker)}</span>`
+          ? `<span class="text-[10px] ml-1 px-1.5 py-0.5 rounded border font-medium" style="${speakerBadgeStyle(
+              rawSpeaker,
+            )}">${escapeHtml(speaker)}</span>`
           : ""
       }<span class="ml-1">${escapeHtml(text || "(no text)")}</span></div>`;
     })
     .join("");
+}
+
+function renderTranscriptionOutput(job, resolvedTranscript) {
+  state.activeJobData = job || null;
+  state.activeJobResolvedTranscript = resolvedTranscript || "";
+  refs.transcriptionOutput.innerHTML = renderSegmentedTranscript(
+    job,
+    state.activeJobResolvedTranscript,
+  );
+  renderSpeakerLegend(job);
 }
 
 function toggleSettings(show) {
@@ -1025,10 +1231,7 @@ async function refreshActiveJob() {
   refs.statusText.textContent = `${job.progress || 0}% - ${job.step} (${job.status})`;
   setError(job.error || "");
   const resolvedTranscript = await resolveTranscript(job);
-  refs.transcriptionOutput.innerHTML = renderSegmentedTranscript(
-    job,
-    resolvedTranscript,
-  );
+  renderTranscriptionOutput(job, resolvedTranscript);
   renderSummary(job.result.summary || "");
   refreshPreview(job);
   updateExportFormats(job);
@@ -1132,6 +1335,10 @@ async function generateSummary() {
       setError(body.detail || "Summary generation failed.");
       return;
     }
+    if (body?.id === state.activeJobId) {
+      const resolvedTranscript = await resolveTranscript(body);
+      renderTranscriptionOutput(body, resolvedTranscript);
+    }
     renderSummary(body.result.summary || "");
     refreshPreview(body);
     showToast("Summary generated");
@@ -1165,10 +1372,19 @@ function resetOutputPanels() {
   refs.statusText.textContent = "Idle";
   refs.transcriptionOutput.innerHTML =
     '<span class="text-[var(--text-muted)] italic">Your transcription will appear here. Start recording or upload an audio file to begin.</span>';
+  if (refs.speakerLegendList) refs.speakerLegendList.innerHTML = "";
+  if (refs.speakerNamePanel) refs.speakerNamePanel.classList.add("hidden");
+  setSpeakerNameControlsState(
+    false,
+    "Speaker names can be edited after transcription is available.",
+  );
   refs.previewContent.innerHTML =
     '<div class="text-[var(--text-muted)] italic">No preview logs yet.</div>';
   renderSummary("");
   refs.exportFormat.innerHTML = "";
+  state.activeJobData = null;
+  state.activeJobResolvedTranscript = "";
+  state.speakerNameDraftByJob = {};
 }
 
 async function deleteSelectedHistoryItem() {
@@ -1214,6 +1430,63 @@ async function copyFromNode(node, message) {
   if (!text) return;
   await navigator.clipboard.writeText(text);
   showToast(message);
+}
+
+async function rerenderActiveTranscriptOutput() {
+  if (!state.activeJobId) return;
+  let job = state.activeJobData;
+  if (!job || job.id !== state.activeJobId) {
+    job = await fetchJob(state.activeJobId);
+  }
+  let resolvedTranscript = state.activeJobResolvedTranscript || "";
+  if (!resolvedTranscript.trim()) {
+    resolvedTranscript = await resolveTranscript(job);
+  }
+  renderTranscriptionOutput(job, resolvedTranscript);
+}
+
+function applySpeakerNamesForActiveJob() {
+  if (!state.activeJobId || !state.activeJobData) return;
+  const job = state.activeJobData;
+  const segments = Array.isArray(job?.result?.segments) ? job.result.segments : [];
+  const speakers = speakersFromSegments(segments);
+  if (!speakers.length) return;
+
+  const jobKey = String(state.activeJobId);
+  const draft = state.speakerNameDraftByJob[jobKey] || {};
+  const cleaned = {};
+  speakers.forEach((speaker) => {
+    const value = typeof draft[speaker] === "string" ? draft[speaker].trim() : "";
+    if (value) cleaned[speaker] = value;
+  });
+
+  if (Object.keys(cleaned).length) {
+    state.speakerNameOverridesByJob[jobKey] = cleaned;
+  } else {
+    delete state.speakerNameOverridesByJob[jobKey];
+  }
+  state.speakerNameDraftByJob[jobKey] = { ...cleaned };
+  persistSpeakerNameOverrides();
+  renderTranscriptionOutput(state.activeJobData, state.activeJobResolvedTranscript);
+  if (refs.speakerNamesStatus) {
+    refs.speakerNamesStatus.textContent = "Saved and applied.";
+  }
+  showToast("Speaker names applied");
+}
+
+async function setTranscriptPreviewMode(mode) {
+  state.previewMode = mode === "timestamps" ? "timestamps" : "text";
+  const textActive = state.previewMode === "text";
+  refs.previewTextBtn.classList.toggle("bg-[var(--bg-card)]", textActive);
+  refs.previewTextBtn.classList.toggle("text-[var(--text-primary)]", textActive);
+  refs.previewTextBtn.classList.toggle("text-[var(--text-muted)]", !textActive);
+  refs.previewTimestampsBtn.classList.toggle("bg-[var(--bg-card)]", !textActive);
+  refs.previewTimestampsBtn.classList.toggle(
+    "text-[var(--text-primary)]",
+    !textActive,
+  );
+  refs.previewTimestampsBtn.classList.toggle("text-[var(--text-muted)]", textActive);
+  await rerenderActiveTranscriptOutput();
 }
 
 function attachEvents() {
@@ -1287,6 +1560,12 @@ function attachEvents() {
   refs.toggleTranscriptionSettings.addEventListener("click", () =>
     toggleAdvancedPanel(),
   );
+  if (refs.toggleSpeakerNamesBtn && refs.speakerNamePanel) {
+    refs.toggleSpeakerNamesBtn.addEventListener("click", () => {
+      if (refs.toggleSpeakerNamesBtn.disabled) return;
+      refs.speakerNamePanel.classList.toggle("hidden");
+    });
+  }
   refs.applyTranscriptionSettingsBtn.addEventListener("click", () => {
     toggleAdvancedPanel(false);
     showToast("Advanced options applied");
@@ -1400,34 +1679,52 @@ function attachEvents() {
   refs.confirmExportBtn.addEventListener("click", exportCurrent);
 
   refs.previewTextBtn.addEventListener("click", async () => {
-    state.previewMode = "text";
-    refs.previewTextBtn.classList.add(
-      "bg-[var(--bg-card)]",
-      "text-[var(--text-primary)]",
-    );
-    refs.previewTextBtn.classList.remove("text-[var(--text-muted)]");
-    refs.previewTimestampsBtn.classList.remove(
-      "bg-[var(--bg-card)]",
-      "text-[var(--text-primary)]",
-    );
-    refs.previewTimestampsBtn.classList.add("text-[var(--text-muted)]");
-    if (state.activeJobId) refreshPreview(await fetchJob(state.activeJobId));
+    await setTranscriptPreviewMode("text");
   });
 
   refs.previewTimestampsBtn.addEventListener("click", async () => {
-    state.previewMode = "timestamps";
-    refs.previewTimestampsBtn.classList.add(
-      "bg-[var(--bg-card)]",
-      "text-[var(--text-primary)]",
-    );
-    refs.previewTimestampsBtn.classList.remove("text-[var(--text-muted)]");
-    refs.previewTextBtn.classList.remove(
-      "bg-[var(--bg-card)]",
-      "text-[var(--text-primary)]",
-    );
-    refs.previewTextBtn.classList.add("text-[var(--text-muted)]");
-    if (state.activeJobId) refreshPreview(await fetchJob(state.activeJobId));
+    await setTranscriptPreviewMode("timestamps");
   });
+
+  if (refs.speakerLegendList) {
+    refs.speakerLegendList.addEventListener("input", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const speakerKey = target.getAttribute("data-speaker-key");
+      if (!speakerKey || !state.activeJobId) return;
+      const rawSpeaker = decodeURIComponent(speakerKey);
+      const jobKey = String(state.activeJobId);
+      if (!state.speakerNameDraftByJob[jobKey]) {
+        state.speakerNameDraftByJob[jobKey] = {
+          ...(state.speakerNameOverridesByJob[jobKey] || {}),
+        };
+      }
+      state.speakerNameDraftByJob[jobKey][rawSpeaker] = target.value;
+      if (refs.speakerNamesStatus) {
+        refs.speakerNamesStatus.textContent = "Unsaved changes.";
+      }
+    });
+  }
+
+  if (refs.applySpeakerNamesBtn) {
+    refs.applySpeakerNamesBtn.addEventListener("click", () => {
+      applySpeakerNamesForActiveJob();
+    });
+  }
+
+  if (refs.clearSpeakerNamesBtn) {
+    refs.clearSpeakerNamesBtn.addEventListener("click", () => {
+      if (!state.activeJobId) return;
+      const jobKey = String(state.activeJobId);
+      delete state.speakerNameOverridesByJob[jobKey];
+      delete state.speakerNameDraftByJob[jobKey];
+      persistSpeakerNameOverrides();
+      renderTranscriptionOutput(state.activeJobData, state.activeJobResolvedTranscript);
+      if (refs.speakerNamesStatus) {
+        refs.speakerNamesStatus.textContent = "Speaker names reset.";
+      }
+    });
+  }
 
   refs.copyTranscriptionBtn.addEventListener("click", () =>
     copyFromNode(refs.transcriptionOutput, "Transcription copied").catch(() =>
@@ -1473,6 +1770,14 @@ function attachEvents() {
     )
       refs.exportMenu.classList.add("hidden");
     if (
+      refs.speakerNamePanel &&
+      refs.toggleSpeakerNamesBtn &&
+      !refs.speakerNamePanel.contains(e.target) &&
+      !refs.toggleSpeakerNamesBtn.contains(e.target)
+    ) {
+      refs.speakerNamePanel.classList.add("hidden");
+    }
+    if (
       !refs.transcriptionSettingsPanel.contains(e.target) &&
       !refs.toggleTranscriptionSettings.contains(e.target)
     ) {
@@ -1493,12 +1798,14 @@ function attachEvents() {
 
 async function init() {
   applyThemePreference(getStoredThemePreference(), false);
+  state.speakerNameOverridesByJob = getStoredSpeakerNameOverrides();
   systemThemeQuery.addEventListener("change", () => {
     if (getStoredThemePreference() === "system") {
       applyThemePreference("system", false);
     }
   });
   attachEvents();
+  await setTranscriptPreviewMode(state.previewMode);
   setSummaryRenderMode(getStoredSummaryRenderMode());
   syncSummaryStyleAvailability();
   await loadConfig();
