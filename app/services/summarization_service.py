@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+from typing import Any, Dict, List
 
 from openai import OpenAI
 
 from app.config import settings
 from app.core.summary_prompts import SUMMARY_PROMPT_TEMPLATES
+from app.utils.speaker_names import build_transcript_with_custom_speakers
 
 
 class SummarizationService:
@@ -27,6 +29,8 @@ class SummarizationService:
         llm_api_base: str | None = None,
         llm_api_key: str | None = None,
         llm_model: str | None = None,
+        segments: List[Dict[str, Any]] | None = None,
+        speaker_name_overrides: Dict[str, str] | None = None,
     ) -> str:
         api_base = llm_api_base if llm_api_base is not None else settings.llm_api_base
         api_key = llm_api_key if llm_api_key is not None else settings.llm_api_key
@@ -40,6 +44,13 @@ class SummarizationService:
             if isinstance(style_prompt, str) and style_prompt.strip()
             else SUMMARY_PROMPT_TEMPLATES.get(style, "Give a concise summary.")
         )
+
+        # Build transcript with custom speaker names if segments and overrides are provided
+        effective_transcript = transcript
+        if segments and speaker_name_overrides:
+            effective_transcript = build_transcript_with_custom_speakers(
+                segments, speaker_name_overrides
+            )
 
         client = OpenAI(base_url=api_base, api_key=api_key)
 
@@ -56,7 +67,7 @@ class SummarizationService:
                 },
                 {
                     "role": "user",
-                    "content": f"{resolved_style_prompt}\n\nTranscript:\n{transcript}",
+                    "content": f"{resolved_style_prompt}\n\nTranscript:\n{effective_transcript}",
                 },
             ],
         )

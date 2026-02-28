@@ -6,7 +6,7 @@ import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from fastapi import UploadFile
 
@@ -115,7 +115,7 @@ class JobService:
             finally:
                 self.queue.task_done()
 
-    async def _process_job(self, job_id: str) -> None:
+    async def _process_job(self, job_id: str, speaker_name_overrides: Dict[str, str] | None = None) -> None:
         job = self.get_job(job_id)
         if job.status == "cancelled":
             return
@@ -130,6 +130,9 @@ class JobService:
         job.updated_at = self._utcnow()
         self._push_event(job, "Started processing.")
         self._save_job(job)
+
+        # Use provided overrides or fall back to job params
+        effective_overrides = speaker_name_overrides or job.params.speaker_name_overrides
 
         try:
             global_settings = self.global_settings_service.get()
@@ -171,6 +174,7 @@ class JobService:
                 base_name="transcript",
                 result=result,
                 output_formats=job.params.output_formats,
+                speaker_name_overrides=effective_overrides,
             )
             job.result.generated_files = outputs
             self._save_job(job)
@@ -189,6 +193,8 @@ class JobService:
                     global_settings.llm_api_base,
                     global_settings.llm_api_key,
                     global_settings.llm_model,
+                    segments=job.result.segments,
+                    speaker_name_overrides=effective_overrides,
                 )
                 job.result.summary = summary
                 job.result.summaries[job.params.summary_style] = summary
@@ -301,7 +307,12 @@ class JobService:
             shutil.rmtree(job_dir)
         return job
 
-    async def regenerate_summary(self, job_id: str, style: str) -> JobState:
+    async def regenerate_summary(
+        self,
+        job_id: str,
+        style: str,
+        speaker_name_overrides: Dict[str, str] | None = None,
+    ) -> JobState:
         job = self.get_job(job_id)
         if job.status not in ("completed", "failed"):
             raise RuntimeError("Summary can be generated after transcription finishes.")
@@ -325,6 +336,8 @@ class JobService:
             global_settings.llm_api_base,
             global_settings.llm_api_key,
             global_settings.llm_model,
+            segments=job.result.segments,
+            speaker_name_overrides=speaker_name_overrides,
         )
         job.result.summary = summary
         job.result.summaries[style] = summary

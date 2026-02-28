@@ -25,6 +25,7 @@ class JobCreateParams(BaseModel):
     retain_processed_audio: bool = True
     retain_export_files: bool = True
     output_formats: List[str] = Field(default_factory=lambda: ["txt", "srt", "vtt", "json"])
+    speaker_name_overrides: Dict[str, str] = Field(default_factory=dict)
 
 
 class JobResult(BaseModel):
@@ -76,6 +77,7 @@ class JobStatusResponse(BaseModel):
 
 class SummaryRequest(BaseModel):
     style: SummaryStyle = "short"
+    speaker_name_overrides: Dict[str, str] = Field(default_factory=dict)
 
 
 class QueueControlResponse(BaseModel):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
@@ -82,6 +82,7 @@ async def create_job(
     summary_enabled: bool = Form(False),
     summary_style: str = Form("short"),
     output_formats: str = Form('["txt","srt","vtt","json"]'),
+    speaker_name_overrides: str = Form("{}"),
     service: JobService = Depends(get_job_service),
 ) -> JobCreateResponse:
     try:
@@ -89,6 +90,13 @@ async def create_job(
     except json.JSONDecodeError as exc:
         raise HTTPException(
             status_code=400, detail="Invalid output_formats JSON array"
+        ) from exc
+
+    try:
+        speaker_overrides_dict: Dict[str, str] = json.loads(speaker_name_overrides)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=400, detail="Invalid speaker_name_overrides JSON object"
         ) from exc
 
     unknown = [
@@ -115,6 +123,7 @@ async def create_job(
         retain_processed_audio=global_settings.retain_processed_audio,
         retain_export_files=global_settings.retain_export_files,
         output_formats=selected_formats,
+        speaker_name_overrides=speaker_overrides_dict,
     )
     try:
         job_id = await service.create_job(file, params)
@@ -173,6 +182,68 @@ def download(
 
     media_type = "application/json" if fmt == "json" else "text/plain"
     return FileResponse(path=file_path, filename=file_path.name, media_type=media_type)
+
+
+@router.post("/jobs/{job_id}/export/{fmt}")
+async def export_with_overrides(
+    job_id: str,
+    fmt: str,
+    speaker_name_overrides: str = Form("{}"),
+    service: JobService = Depends(get_job_service),
+):
+    """
+    Export a transcript file with custom speaker name overrides.
+    Generates the file on-the-fly with the provided overrides.
+    """
+    try:
+        job = service.get_job(job_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Job not found") from exc
+
+    if fmt not in settings.supported_output_formats:
+        raise HTTPException(status_code=400, detail=f"Unsupported format: {fmt}")
+
+    try:
+        overrides_dict: Dict[str, str] = json.loads(speaker_name_overrides)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=400, detail="Invalid speaker_name_overrides JSON object"
+        ) from exc
+
+    # Generate export with overrides
+    from app.services.export_service import ExportService
+
+    export_service = ExportService()
+    job_dir = Path(job.source_path).parent
+    base_name = Path(job.filename).stem or "transcript"
+
+    result = {
+        "text": job.result.transcript or "",
+        "segments": job.result.segments,
+    }
+
+    files = export_service.write_outputs(
+        job_dir=job_dir,
+        base_name=f"{base_name}_export",
+        result=result,
+        output_formats=[fmt],
+        speaker_name_overrides=overrides_dict,
+    )
+
+    if fmt not in files:
+        raise HTTPException(status_code=500, detail="Export generation failed")
+
+    file_path = Path(files[fmt])
+    if not file_path.exists():
+        raise HTTPException(status_code=500, detail="Export file not found")
+
+    media_type = "application/json" if fmt == "json" else "text/plain"
+    safe_name = f"{base_name}.{fmt}"
+    return FileResponse(
+        path=file_path,
+        filename=safe_name,
+        media_type=media_type,
+    )
 
 
 @router.get("/jobs/{job_id}/summary/export")
@@ -278,7 +349,11 @@ async def regenerate_summary(
 ) -> JobStatusResponse:
     normalized_style = normalize_summary_style_key(payload.style) or "short"
     try:
-        job = await service.regenerate_summary(job_id=job_id, style=normalized_style)
+        job = await service.regenerate_summary(
+            job_id=job_id,
+            style=normalized_style,
+            speaker_name_overrides=payload.speaker_name_overrides,
+        )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Job not found") from exc
     except RuntimeError as exc:

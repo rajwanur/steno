@@ -1310,8 +1310,42 @@ async function exportCurrent() {
     setError("No export format available for selected job.");
     return;
   }
-  window.location.href = `/api/jobs/${state.activeJobId}/download/${fmt}`;
-  refs.exportMenu.classList.add("hidden");
+
+  // Get speaker name overrides for this job
+  const jobKey = String(state.activeJobId);
+  const overrides = state.speakerNameOverridesByJob[jobKey] || {};
+
+  // Use the new export endpoint that accepts speaker name overrides
+  const formData = new FormData();
+  formData.append("speaker_name_overrides", JSON.stringify(overrides));
+
+  const url = `/api/jobs/${state.activeJobId}/export/${fmt}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Export failed");
+    }
+
+    // Download the file
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    const baseName = state.activeJobData?.filename?.replace(/\.[^.]+$/, "") || "transcript";
+    a.download = `${baseName}.${fmt}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(downloadUrl);
+    refs.exportMenu.classList.add("hidden");
+  } catch (e) {
+    setError("Export failed: " + e.message);
+  }
 }
 
 async function generateSummary() {

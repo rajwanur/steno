@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
+
+from app.utils.speaker_names import apply_speaker_name_overrides
 
 
 class ExportService:
@@ -21,6 +23,7 @@ class ExportService:
         base_name: str,
         result: dict,
         output_formats: List[str],
+        speaker_name_overrides: Dict[str, str] | None = None,
     ) -> Dict[str, str]:
         files: Dict[str, str] = {}
         segments = result.get("segments", [])
@@ -28,14 +31,21 @@ class ExportService:
         if not text and segments:
             text = " ".join((seg.get("text", "").strip() for seg in segments)).strip()
 
+        # Apply speaker name overrides if provided
+        if speaker_name_overrides:
+            segments = apply_speaker_name_overrides(segments, speaker_name_overrides)
+
         if "txt" in output_formats:
             p = job_dir / f"{base_name}.txt"
             p.write_text(text + "\n", encoding="utf-8")
             files["txt"] = str(p)
 
         if "json" in output_formats:
+            # Create a copy of result with overridden segments for JSON export
+            export_result = dict(result)
+            export_result["segments"] = segments
             p = job_dir / f"{base_name}.json"
-            p.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+            p.write_text(json.dumps(export_result, ensure_ascii=False, indent=2), encoding="utf-8")
             files["json"] = str(p)
 
         if "srt" in output_formats:
